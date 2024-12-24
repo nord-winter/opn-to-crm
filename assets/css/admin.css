@@ -1,0 +1,236 @@
+/* OPN To CRM Admin Styles */
+
+/* Container Styles */
+.wrap {
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+/* Section Styles */
+.sr-api-settings,
+.opn-api-settings {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.sr-api-settings h2,
+.opn-api-settings h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Form Table Styles */
+.form-table th {
+    width: 200px;
+    padding: 20px;
+}
+
+.form-table td {
+    padding: 15px 20px;
+}
+
+.form-table input[type="text"],
+.form-table input[type="password"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Field Descriptions */
+.description {
+    color: #666;
+    font-style: italic;
+    margin-top: 4px;
+}
+
+/* Test Mode Toggle */
+.test-mode-toggle {
+    margin-bottom: 20px;
+}
+
+.test-mode-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* API Key Fields */
+.api-key-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 400px;
+}
+
+.api-key-field input {
+    flex-grow: 1;
+}
+
+.api-key-field .copy-key {
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.api-key-field .copy-key:hover {
+    background: #e5e5e5;
+}
+
+/* Error States */
+.error {
+    border-color: #dc3545 !important;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Success/Error Notices */
+.notice {
+    position: relative;
+    padding: 1px 12px;
+}
+
+.notice p {
+    margin: 0.5em 0;
+    padding: 2px;
+}
+
+/* Test Connection Button */
+.test-connection {
+    margin-top: 10px;
+}
+
+.button.test-connection {
+    background: #f0f0f1;
+    border-color: #c3c4c7;
+}
+
+.button.test-connection:hover {
+    background: #e5e5e5;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #2271b1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltips */
+.sr-tooltip {
+    color: #666;
+    text-decoration: none;
+    margin-left: 4px;
+}
+
+.sr-tooltip:hover {
+    color: #135e96;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 782px) {
+    .form-table th {
+        width: auto;
+        padding: 15px 10px;
+    }
+    
+    .form-table td {
+        padding: 10px;
+    }
+    
+    .api-key-field {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .api-key-field .copy-key {
+        align-self: flex-start;
+    }
+}
+
+/* Mode Switch Styles */
+.mode-switch {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.mode-switch label {
+    font-weight: 600;
+}
+
+/* Hidden Elements */
+.hidden {
+    display: none !important;
+}
+
+/* Submit Button Area */
+.submit {
+    padding: 20px 0;
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Toggle Password Button */
+.toggle-password {
+    color: #2271b1;
+    text-decoration: none;
+    font-size: 12px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.toggle-password:hover {
+    color: #135e96;
+}
+
+/* Required Field Indicator */
+.required {
+    color: #dc3545;
+    margin-left: 3px;
+}
+
+/* Section Headers */
+.settings-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.settings-section-header h2 {
+    margin: 0;
+}
