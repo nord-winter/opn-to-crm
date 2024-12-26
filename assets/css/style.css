@@ -203,11 +203,16 @@ textarea:focus {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    height: 60px;
 }
 
 .sr-payment-method input[type="radio"]:checked + label {
     border-color: #22C55E;
     background-color: #F0FDF4;
+}
+.sr-payment-method img {
+    height: 32px;
+    width: auto;
 }
 
 .sr-payment-icons {

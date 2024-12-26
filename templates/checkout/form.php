@@ -1,9 +1,18 @@
+<?php
+$opn_api = new OPN_API();
+$public_key = $opn_api->get_public_key();
+?>
+
+<script>
+    const opnPublicKey = '<?php echo esc_js($public_key); ?>';
+</script>
+
 <div class="sr-checkout-container">
     <!-- Test Mode Notice -->
     <?php if (get_option('opn_test_mode')): ?>
-    <div class="sr-test-mode-notice">
-        <p><?php _e('Test mode is enabled. Use test card: 4242 4242 4242 4242', 'opn-to-crm'); ?></p>
-    </div>
+        <div class="sr-test-mode-notice">
+            <p><?php _e('Test mode is enabled. Use test card: 4242 4242 4242 4242', 'opn-to-crm'); ?></p>
+        </div>
     <?php endif; ?>
 
     <div class="sr-checkout-grid">
@@ -13,25 +22,25 @@
             <div class="sr-section">
                 <h2 class="sr-section-title"><?php _e('Select Package', 'opn-to-crm'); ?></h2>
                 <div class="sr-package-grid">
-                    <?php 
+                    <?php
                     $packages = array(
                         array('id' => 4, 'name' => '4x', 'units' => 40, 'discount' => 15, 'price' => 3400),
                         array('id' => 3, 'name' => '3x', 'units' => 30, 'discount' => 10, 'price' => 2700),
                         array('id' => 2, 'name' => '2x', 'units' => 20, 'discount' => 5, 'price' => 1900),
                         array('id' => 1, 'name' => '1x', 'units' => 10, 'discount' => 0, 'price' => 1000),
                     );
-                    
+
                     foreach ($packages as $package): ?>
-                    <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>">
-                        <h3><?php echo sprintf(__('Package %s', 'opn-to-crm'), $package['name']); ?></h3>
-                        <div class="sr-package-details">
-                            <span class="sr-package-price">฿<?php echo number_format($package['price']); ?></span>
-                            <span class="sr-package-units"><?php echo $package['units']; ?> units</span>
-                            <?php if ($package['discount'] > 0): ?>
-                            <span class="sr-package-discount">Save <?php echo $package['discount']; ?>%</span>
-                            <?php endif; ?>
+                        <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>">
+                            <h3><?php echo sprintf(__('Package %s', 'opn-to-crm'), $package['name']); ?></h3>
+                            <div class="sr-package-details">
+                                <span class="sr-package-price">฿<?php echo number_format($package['price']); ?></span>
+                                <span class="sr-package-units"><?php echo $package['units']; ?> units</span>
+                                <?php if ($package['discount'] > 0): ?>
+                                    <span class="sr-package-discount">Save <?php echo $package['discount']; ?>%</span>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                    </div>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -99,7 +108,8 @@
                         <label for="card_payment">
                             <span class="sr-payment-icons">
                                 <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/visa.png" alt="Visa">
-                                <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/mastercard.png" alt="Mastercard">
+                                <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/mastercard.png"
+                                    alt="Mastercard">
                             </span>
                             <?php _e('Credit / Debit Card', 'opn-to-crm'); ?>
                         </label>
@@ -112,8 +122,25 @@
                         </label>
                     </div>
                 </div>
-                <div id="sr-card-element" class="sr-card-element"></div>
-                <div id="sr-card-errors" class="sr-error"></div>
+
+                <!-- Контейнер для форм оплаты -->
+                <div class="sr-payment-forms">
+                    <!-- Форма для карты -->
+                    <div id="card-form" class="sr-payment-form sr-card-form">
+                        <div id="card-element"></div>
+                        <div id="card-errors" class="sr-error"></div>
+                    </div>
+
+                    <!-- Контейнер для QR-кода PromptPay -->
+                    <div id="promptpay-form" class="sr-payment-form sr-promptpay-form" style="display: none;">
+                        <div id="promptpay-qr" class="sr-qr-container"></div>
+                        <div class="sr-qr-instructions">
+                            <p><?php _e('1. Open your banking app', 'opn-to-crm'); ?></p>
+                            <p><?php _e('2. Scan this QR code', 'opn-to-crm'); ?></p>
+                            <p><?php _e('3. Confirm the payment', 'opn-to-crm'); ?></p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Order Summary -->
@@ -136,8 +163,13 @@
                     <span id="summary-total">฿0</span>
                 </div>
                 <button type="submit" class="sr-submit-button" id="sr-submit">
-                    <?php _e('Complete Order', 'opn-to-crm'); ?>
+                    <span class="sr-button-text"><?php _e('Complete Order', 'opn-to-crm'); ?></span>
+                    <span class="sr-button-loading" style="display: none;">
+                        <span class="sr-spinner"></span>
+                        <?php _e('Processing...', 'opn-to-crm'); ?>
+                    </span>
                 </button>
+                <div id="payment-status" class="sr-payment-status" style="display: none;"></div>
             </div>
         </div>
     </div>

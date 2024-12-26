@@ -126,6 +126,17 @@ class OPN_To_CRM {
             OPN_TO_CRM_VERSION,
             true
         );
+
+        // Get OPN API instance
+        $opn_api = new OPN_API();
+
+        // Localize script with required data
+        wp_localize_script('opn-to-crm-checkout', 'srCheckoutParams', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('sr_checkout_nonce'),
+            'opnPublicKey' => $opn_api->get_public_key(),
+            'isTestMode' => $opn_api->is_test_mode()
+        ));
     }
 }
 
