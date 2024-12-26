@@ -3,7 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class SR_Payment {
+class SR_Payment
+{
     /**
      * @var OPN_API
      */
@@ -14,7 +15,8 @@ class SR_Payment {
      * 
      * @param OPN_API $opn_api
      */
-    public function __construct($opn_api) {
+    public function __construct($opn_api)
+    {
         $this->opn_api = $opn_api;
         $this->init_hooks();
     }
@@ -22,10 +24,17 @@ class SR_Payment {
     /**
      * Initialize hooks
      */
-    private function init_hooks() {
+    private function init_hooks()
+    {
         add_action('wp_ajax_sr_create_source', array($this, 'ajax_create_source'));
         add_action('wp_ajax_nopriv_sr_create_source', array($this, 'ajax_create_source'));
         add_action('init', array($this, 'handle_opn_webhook'));
+
+        add_action('wp_ajax_sr_create_promptpay_source', array($this, 'ajax_create_promptpay_source'));
+        add_action('wp_ajax_nopriv_sr_create_promptpay_source', array($this, 'ajax_create_promptpay_source'));
+        
+        add_action('wp_ajax_sr_check_payment_status', array($this, 'ajax_check_payment_status'));
+        add_action('wp_ajax_nopriv_sr_check_payment_status', array($this, 'ajax_check_payment_status'));
     }
 
     /**
@@ -34,15 +43,16 @@ class SR_Payment {
      * @param array $data Payment data
      * @return array|WP_Error Payment result
      */
-    public function process_payment($data) {
+    public function process_payment($data)
+    {
         try {
             switch ($data['payment_method']) {
                 case 'credit_card':
                     return $this->process_card_payment($data);
-                
+
                 case 'promptpay':
                     return $this->process_promptpay_payment($data);
-                
+
                 default:
                     return new WP_Error('invalid_payment_method', __('Invalid payment method', 'opn-to-crm'));
             }
@@ -57,7 +67,8 @@ class SR_Payment {
      * @param array $data Payment data
      * @return array Payment result
      */
-    private function process_card_payment($data) {
+    private function process_card_payment($data)
+    {
         $charge_data = array(
             'amount' => $data['amount'],
             'currency' => $data['currency'],
@@ -68,7 +79,7 @@ class SR_Payment {
         );
 
         $result = $this->opn_api->create_charge($charge_data);
-        
+
         if (is_wp_error($result)) {
             throw new Exception($result->get_error_message());
         }
@@ -86,7 +97,8 @@ class SR_Payment {
      * @param array $data Payment data
      * @return array Payment result
      */
-    private function process_promptpay_payment($data) {
+    private function process_promptpay_payment($data)
+    {
         // Create source first
         $source_data = array(
             'type' => 'promptpay',
@@ -95,7 +107,7 @@ class SR_Payment {
         );
 
         $source = $this->opn_api->create_source($source_data);
-        
+
         if (is_wp_error($source)) {
             throw new Exception($source->get_error_message());
         }
@@ -111,7 +123,7 @@ class SR_Payment {
         );
 
         $result = $this->opn_api->create_charge($charge_data);
-        
+
         if (is_wp_error($result)) {
             throw new Exception($result->get_error_message());
         }
@@ -130,7 +142,8 @@ class SR_Payment {
     /**
      * Create payment source (AJAX handler)
      */
-    public function ajax_create_source() {
+    public function ajax_create_source()
+    {
         try {
             if (!wp_verify_nonce($_POST['nonce'], 'sr_payment_nonce')) {
                 throw new Exception(__('Invalid security token', 'opn-to-crm'));
@@ -147,7 +160,7 @@ class SR_Payment {
             );
 
             $result = $this->opn_api->create_source($source_data);
-            
+
             if (is_wp_error($result)) {
                 throw new Exception($result->get_error_message());
             }
@@ -164,7 +177,8 @@ class SR_Payment {
     /**
      * Handle OPN webhook
      */
-    public function handle_opn_webhook() {
+    public function handle_opn_webhook()
+    {
         if (empty($_GET['sr_opn_webhook'])) {
             return;
         }
@@ -178,7 +192,7 @@ class SR_Payment {
             }
 
             $event = json_decode($payload, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new Exception('Invalid payload');
             }
@@ -188,11 +202,11 @@ class SR_Payment {
                 case 'charge.complete':
                     $this->handle_charge_complete($event['data']);
                     break;
-                
+
                 case 'charge.expire':
                     $this->handle_charge_expire($event['data']);
                     break;
-                
+
                 case 'charge.fail':
                     $this->handle_charge_fail($event['data']);
                     break;
@@ -212,10 +226,11 @@ class SR_Payment {
      * 
      * @param array $data Event data
      */
-    private function handle_charge_complete($data) {
+    private function handle_charge_complete($data)
+    {
         $sr_api = new SR_API();
         $order_id = $data['metadata']['order_id'];
-        
+
         // Update order status in SalesRender
         $sr_api->update_order_status($order_id, 'completed');
     }
@@ -225,10 +240,11 @@ class SR_Payment {
      * 
      * @param array $data Event data
      */
-    private function handle_charge_expire($data) {
+    private function handle_charge_expire($data)
+    {
         $sr_api = new SR_API();
         $order_id = $data['metadata']['order_id'];
-        
+
         // Update order status in SalesRender
         $sr_api->update_order_status($order_id, 'expired');
     }
@@ -238,11 +254,85 @@ class SR_Payment {
      * 
      * @param array $data Event data
      */
-    private function handle_charge_fail($data) {
+    private function handle_charge_fail($data)
+    {
         $sr_api = new SR_API();
         $order_id = $data['metadata']['order_id'];
-        
+
         // Update order status in SalesRender
         $sr_api->update_order_status($order_id, 'failed');
+    }
+
+    /**
+     * Создание PromptPay QR-кода
+     */
+    public function ajax_create_promptpay_source()
+    {
+        try {
+            if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
+                throw new Exception(__('Invalid security token', 'opn-to-crm'));
+            }
+
+            $amount = isset($_POST['amount']) ? absint($_POST['amount']) : 0;
+            if (!$amount) {
+                throw new Exception(__('Invalid amount', 'opn-to-crm'));
+            }
+
+            $source_data = array(
+                'type' => 'promptpay',
+                'amount' => $amount,
+                'currency' => 'THB'
+            );
+
+            $result = $this->opn_api->create_source($source_data);
+
+            if (is_wp_error($result)) {
+                throw new Exception($result->get_error_message());
+            }
+
+            wp_send_json_success(array(
+                'id' => $result['id'],
+                'qr_image' => $result['qr']['image']['download_uri']
+            ));
+
+        } catch (Exception $e) {
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Проверка статуса платежа
+     */
+    public function ajax_check_payment_status()
+    {
+        try {
+            if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
+                throw new Exception(__('Invalid security token', 'opn-to-crm'));
+            }
+
+            $source_id = isset($_POST['source_id']) ? sanitize_text_field($_POST['source_id']) : '';
+            if (!$source_id) {
+                throw new Exception(__('Invalid source ID', 'opn-to-crm'));
+            }
+
+            $result = $this->opn_api->check_source($source_id);
+
+            if (is_wp_error($result)) {
+                throw new Exception($result->get_error_message());
+            }
+
+            wp_send_json_success(array(
+                'paid' => $result['status'] === 'used',
+                'expired' => $result['status'] === 'expired',
+                'status' => $result['status']
+            ));
+
+        } catch (Exception $e) {
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
+            ));
+        }
     }
 }

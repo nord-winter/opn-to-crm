@@ -298,6 +298,27 @@ textarea.error {
     animation: spin 1s linear infinite;
 }
 
+.sr-qr-wrapper {
+    text-align: center;
+    padding: 20px;
+}
+
+.sr-qr-image {
+    max-width: 300px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.sr-qr-instructions {
+    margin-top: 20px;
+    color: #374151;
+}
+
+.sr-qr-instructions p {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
 @keyframes spin {
     to { transform: rotate(360deg); }
 }

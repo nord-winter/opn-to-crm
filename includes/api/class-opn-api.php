@@ -3,13 +3,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class OPN_API {
+class OPN_API
+{
     private $secret_key;
     private $public_key;
-    private $api_base = 'https://api.opn.ooo';
+    private $api_base = 'https://api.omise.co';
     private $is_test;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->is_test = get_option('opn_test_mode', true);
         $this->secret_key = $this->is_test ? get_option('opn_test_secret_key') : get_option('opn_live_secret_key');
         $this->public_key = $this->is_test ? get_option('opn_test_public_key') : get_option('opn_live_public_key');
@@ -21,9 +23,10 @@ class OPN_API {
      * @param array $data Charge data
      * @return array|WP_Error
      */
-    public function create_charge($data) {
+    public function create_charge($data)
+    {
         $endpoint = '/charges';
-        
+
         $body = array(
             'amount' => $data['amount'],
             'currency' => 'THB',
@@ -51,7 +54,8 @@ class OPN_API {
      * @param array $data Source data
      * @return array|WP_Error
      */
-    public function create_source($data) {
+    public function create_source($data)
+    {
         $endpoint = '/sources';
 
         $body = array(
@@ -69,7 +73,8 @@ class OPN_API {
      * @param string $charge_id
      * @return array|WP_Error
      */
-    public function get_charge($charge_id) {
+    public function get_charge($charge_id)
+    {
         $endpoint = '/charges/' . $charge_id;
         return $this->request('GET', $endpoint);
     }
@@ -81,9 +86,10 @@ class OPN_API {
      * @param array $data Refund data
      * @return array|WP_Error
      */
-    public function create_refund($charge_id, $data) {
+    public function create_refund($charge_id, $data)
+    {
         $endpoint = '/charges/' . $charge_id . '/refunds';
-        
+
         $body = array(
             'amount' => $data['amount'],
             'metadata' => array(
@@ -102,7 +108,8 @@ class OPN_API {
      * @param array $body Request body
      * @return array|WP_Error
      */
-    private function request($method, $endpoint, $body = null) {
+    private function request($method, $endpoint, $body = null)
+    {
         $args = array(
             'method' => $method,
             'headers' => array(
@@ -137,11 +144,24 @@ class OPN_API {
     }
 
     /**
+     * Проверка статуса источника платежа
+     * 
+     * @param string $source_id ID источника платежа
+     * @return array|WP_Error
+     */
+    public function check_source($source_id)
+    {
+        $endpoint = '/sources/' . $source_id;
+        return $this->request('GET', $endpoint);
+    }
+
+    /**
      * Get public key for frontend
      * 
      * @return string
      */
-    public function get_public_key() {
+    public function get_public_key()
+    {
         return $this->public_key;
     }
 
@@ -150,7 +170,8 @@ class OPN_API {
      * 
      * @return boolean
      */
-    public function is_test_mode() {
+    public function is_test_mode()
+    {
         return $this->is_test;
     }
 }

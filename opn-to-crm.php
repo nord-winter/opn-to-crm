@@ -10,7 +10,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class OPN_To_CRM {
+class OPN_To_CRM
+{
     /**
      * @var null|OPN_To_CRM
      */
@@ -24,7 +25,8 @@ class OPN_To_CRM {
     /**
      * @return OPN_To_CRM
      */
-    public static function instance() {
+    public static function instance()
+    {
         if (is_null(self::$instance)) {
             self::$instance = new self();
         }
@@ -34,7 +36,8 @@ class OPN_To_CRM {
     /**
      * Constructor
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->define_constants();
         $this->init_hooks();
         $this->includes();
@@ -43,7 +46,8 @@ class OPN_To_CRM {
     /**
      * Define plugin constants
      */
-    private function define_constants() {
+    private function define_constants()
+    {
         define('OPN_TO_CRM_VERSION', $this->version);
         define('OPN_TO_CRM_PLUGIN_DIR', plugin_dir_path(__FILE__));
         define('OPN_TO_CRM_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -52,7 +56,8 @@ class OPN_To_CRM {
     /**
      * Initialize WordPress hooks
      */
-    private function init_hooks() {
+    private function init_hooks()
+    {
         add_action('plugins_loaded', array($this, 'init_plugin'));
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
         add_action('wp_enqueue_scripts', array($this, 'frontend_scripts'));
@@ -61,7 +66,8 @@ class OPN_To_CRM {
     /**
      * Include required files
      */
-    private function includes() {
+    private function includes()
+    {
         // API Classes
         require_once OPN_TO_CRM_PLUGIN_DIR . 'includes/api/class-sr-api.php';
         require_once OPN_TO_CRM_PLUGIN_DIR . 'includes/api/class-opn-api.php';
@@ -78,7 +84,8 @@ class OPN_To_CRM {
     /**
      * Initialize plugin
      */
-    public function init_plugin() {
+    public function init_plugin()
+    {
         // Initialize admin
         if (is_admin()) {
             new SR_Admin();
@@ -91,7 +98,8 @@ class OPN_To_CRM {
     /**
      * Enqueue admin scripts
      */
-    public function admin_scripts() {
+    public function admin_scripts()
+    {
         wp_enqueue_style(
             'opn-to-crm-admin',
             OPN_TO_CRM_PLUGIN_URL . 'assets/css/admin.css',
@@ -111,12 +119,23 @@ class OPN_To_CRM {
     /**
      * Enqueue frontend scripts
      */
-    public function frontend_scripts() {
+    public function frontend_scripts()
+    {
+        $opn_api = new OPN_API();
+
         wp_enqueue_style(
             'opn-to-crm-frontend',
             OPN_TO_CRM_PLUGIN_URL . 'assets/css/style.css',
             array(),
             OPN_TO_CRM_VERSION
+        );
+
+        wp_enqueue_script(
+            'opn-js',
+            'https://cdn.omise.co/omise.js',
+            array(),
+            OPN_TO_CRM_VERSION,
+            true
         );
 
         wp_enqueue_script(
@@ -127,21 +146,36 @@ class OPN_To_CRM {
             true
         );
 
-        // Get OPN API instance
-        $opn_api = new OPN_API();
+        wp_enqueue_script(
+            'opn-to-crm-payments',
+            OPN_TO_CRM_PLUGIN_URL . 'assets/js/payments.js',
+            array('jquery', 'opn-js', 'opn-to-crm-checkout'),
+            OPN_TO_CRM_VERSION,
+            true
+        );
 
-        // Localize script with required data
-        wp_localize_script('opn-to-crm-checkout', 'srCheckoutParams', array(
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('sr_checkout_nonce'),
+        wp_localize_script('opn-to-crm-payments', 'srCheckoutParams', array(
             'opnPublicKey' => $opn_api->get_public_key(),
-            'isTestMode' => $opn_api->is_test_mode()
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('sr_checkout_nonce')
         ));
+    }
+
+    /**
+     * Получение публичного ключа OPN Payments
+     *
+     * @return string
+     */
+    private function get_opn_public_key()
+    {
+        $opn_api = new OPN_API();
+        return $opn_api->get_public_key();
     }
 }
 
 // Initialize plugin
-function OPN_To_CRM() {
+function OPN_To_CRM()
+{
     return OPN_To_CRM::instance();
 }
 

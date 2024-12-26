@@ -123,23 +123,9 @@ $public_key = $opn_api->get_public_key();
                     </div>
                 </div>
 
-                <!-- Контейнер для форм оплаты -->
-                <div class="sr-payment-forms">
-                    <!-- Форма для карты -->
-                    <div id="card-form" class="sr-payment-form sr-card-form">
-                        <div id="card-element"></div>
-                        <div id="card-errors" class="sr-error"></div>
-                    </div>
-
-                    <!-- Контейнер для QR-кода PromptPay -->
-                    <div id="promptpay-form" class="sr-payment-form sr-promptpay-form" style="display: none;">
-                        <div id="promptpay-qr" class="sr-qr-container"></div>
-                        <div class="sr-qr-instructions">
-                            <p><?php _e('1. Open your banking app', 'opn-to-crm'); ?></p>
-                            <p><?php _e('2. Scan this QR code', 'opn-to-crm'); ?></p>
-                            <p><?php _e('3. Confirm the payment', 'opn-to-crm'); ?></p>
-                        </div>
-                    </div>
+                <!-- Контейнер для QR-кода PromptPay -->
+                <div id="promptpay-form" class="sr-payment-form sr-promptpay-form" style="display: none;">
+                    <div id="promptpay-qr" class="sr-qr-container"></div>
                 </div>
             </div>
 
