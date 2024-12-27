@@ -25,15 +25,17 @@ class OPN_API
      */
     public function create_charge($data)
     {
+        error_log('Charge data: ' . print_r($data, true));
         $endpoint = '/charges';
 
         $body = array(
             'amount' => $data['amount'],
-            'currency' => 'THB',
-            'description' => $data['description'] ?? '',
-            'source' => $data['source'],
+            'currency' => $data['currency'] ?? 'THB',
+            'source' => $data['source'] ?? $data['token'],
             'metadata' => array(
-                'order_id' => $data['order_id']
+                'order_id' => $data['order_id'] ?? 'temp',
+                'payment_type' => $data['payment_type'] ?? 'card',
+                'website' => $data['website'] ?? get_site_url()
             )
         );
 
@@ -124,6 +126,7 @@ class OPN_API
         }
 
         $response = wp_remote_request($this->api_base . $endpoint, $args);
+        error_log('API Response: ' . wp_remote_retrieve_body($response));
 
         if (is_wp_error($response)) {
             return $response;

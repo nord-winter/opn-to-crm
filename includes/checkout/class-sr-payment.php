@@ -46,64 +46,52 @@ class SR_Payment
     public function ajax_process_payment()
     {
         try {
-            // Проверяем nonce
             if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
-                throw new Exception(__('Invalid security token', 'opn-to-crm'));
+                throw new Exception('Invalid nonce');
             }
 
-            // Проверяем обязательные параметры
-            if (empty($_POST['token']) || empty($_POST['amount'])) {
-                throw new Exception(__('Missing required parameters', 'opn-to-crm'));
-            }
-
-            // Получаем и валидируем данные
             $token = sanitize_text_field($_POST['token']);
             $amount = absint($_POST['amount']);
+            $payment_type = sanitize_text_field($_POST['payment_type']); // Добавляем тип платежа
 
-            if ($amount <= 0) {
-                throw new Exception(__('Invalid amount', 'opn-to-crm'));
+            if ($payment_type === 'card') {
+                $charge_data = array(
+                    'amount' => $amount,
+                    'currency' => 'THB',
+                    'card' => $token,
+                    'return_uri' => home_url('/checkout/complete/'),
+                    'metadata' => array(
+                        'payment_type' => 'card',
+                        'website' => get_site_url()
+                    )
+                );
+            } else {
+                // PromptPay логика
+                $source = $this->opn_api->create_source(array(
+                    'type' => 'promptpay',
+                    'amount' => $amount,
+                    'currency' => 'THB'
+                ));
+
+                $charge_data = array(
+                    'amount' => $amount,
+                    'currency' => 'THB',
+                    'source' => $source['id'],
+                    'return_uri' => home_url('/checkout/complete/')
+                );
             }
-
-            // Создаем платёж через OPN API
-            $charge_data = array(
-                'amount' => $amount,
-                'currency' => 'THB',
-                'source' => $token,
-                'return_uri' => add_query_arg('order_id', 'temp', home_url('/checkout/complete/')),
-                'metadata' => array(
-                    'payment_type' => 'card',
-                    'website' => get_site_url()
-                )
-            );
 
             $result = $this->opn_api->create_charge($charge_data);
 
-            if (is_wp_error($result)) {
-                throw new Exception($result->get_error_message());
-            }
-
-            // Проверяем результат создания платежа
-            if (!isset($result['id'])) {
-                throw new Exception(__('Invalid payment response', 'opn-to-crm'));
-            }
-
-            // Формируем ответ
-            $response = array(
+            wp_send_json_success([
                 'id' => $result['id'],
-                'status' => $result['status']
-            );
-
-            // Добавляем URL для 3D Secure если требуется
-            if (isset($result['authorize_uri']) && !empty($result['authorize_uri'])) {
-                $response['authorizeUri'] = $result['authorize_uri'];
-            }
-
-            wp_send_json_success($response);
+                'status' => $result['status'],
+                'authorize_uri' => $result['authorize_uri'] ?? null,
+                'qr_code_uri' => $result['source']['scannable_code']['image']['download_uri'] ?? null
+            ]);
 
         } catch (Exception $e) {
-            wp_send_json_error(array(
-                'message' => $e->getMessage()
-            ));
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 
@@ -142,22 +130,28 @@ class SR_Payment
         $charge_data = array(
             'amount' => $data['amount'],
             'currency' => $data['currency'],
-            'source' => $data['token'],
+            'card' => $data['token'], // Было source
             'customer' => $data['customer'],
             'return_uri' => $data['return_uri'],
-            'order_id' => $data['order_id']
+            'metadata' => array(
+                'order_id' => $data['order_id']
+            )
         );
+
+        if (isset($data['customer'])) {
+            $charge_data['customer'] = $data['customer'];
+        }
 
         $result = $this->opn_api->create_charge($charge_data);
 
         if (is_wp_error($result)) {
-            throw new Exception($result->get_error_message());
+            return $result;
         }
 
         return array(
             'id' => $result['id'],
             'status' => $result['status'],
-            'authorize_uri' => $result['authorize_uri'] ?? null
+            'authorizeUri' => isset($result['authorize_uri']) ? $result['authorize_uri'] : null
         );
     }
 
@@ -167,9 +161,10 @@ class SR_Payment
      * @param array $data Payment data
      * @return array Payment result
      */
+
     private function process_promptpay_payment($data)
     {
-        // Create source first
+        // Создаем source
         $source_data = array(
             'type' => 'promptpay',
             'amount' => $data['amount'],
@@ -179,23 +174,26 @@ class SR_Payment
         $source = $this->opn_api->create_source($source_data);
 
         if (is_wp_error($source)) {
-            throw new Exception($source->get_error_message());
+            return $source;
         }
 
-        // Create charge with source
+        // Создаем charge
         $charge_data = array(
             'amount' => $data['amount'],
             'currency' => $data['currency'],
             'source' => $source['id'],
-            'customer' => $data['customer'],
             'return_uri' => $data['return_uri'],
-            'order_id' => $data['order_id']
+            'metadata' => $data['metadata']
         );
+
+        if (isset($data['customer'])) {
+            $charge_data['customer'] = $data['customer'];
+        }
 
         $result = $this->opn_api->create_charge($charge_data);
 
         if (is_wp_error($result)) {
-            throw new Exception($result->get_error_message());
+            return $result;
         }
 
         return array(
@@ -204,7 +202,7 @@ class SR_Payment
             'source' => array(
                 'id' => $source['id'],
                 'type' => $source['type'],
-                'qr_code' => $source['qr_code']
+                'qr_code' => isset($source['qr_code']) ? $source['qr_code'] : null
             )
         );
     }

@@ -78,6 +78,7 @@ class OPNPaymentHandler {
     OmiseCard.open({
       amount: this.getAmount(),
       onCreateTokenSuccess: (token) => {
+        console.log("Token created:", token);
         this.processPayment(token);
       },
       onFormClosed: () => {
@@ -218,31 +219,40 @@ class OPNPaymentHandler {
 
   async processPayment(token) {
     try {
+      const formData = new URLSearchParams({
+        action: "sr_process_payment",
+        nonce: srCheckoutParams.nonce,
+        token: token,
+        amount: this.getAmount(),
+        currency: "THB",
+        payment_type: "card",
+        return_uri: `${window.location.origin}/checkout/complete/`,
+      });
+
       const response = await fetch(srCheckoutParams.ajaxUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          action: "sr_process_payment",
-          nonce: srCheckoutParams.nonce,
-          token: token,
-          amount: this.getAmount(),
-        }),
+        body: formData,
       });
 
       const result = await response.json();
-      console.log(result);
+      console.log("Payment result:", result);
+
       if (!result.success) {
         throw new Error(result.data.message || "Ошибка обработки платежа");
       }
 
-      if (result.data.authorizeUri) {
-        window.location.href = result.data.authorizeUri;
+      const data = result.data;
+
+      if (data.authorizeUri) {
+        window.location.href = data.authorizeUri;
       } else {
-        this.handlePaymentSuccess(result.data);
+        this.handlePaymentSuccess(data);
       }
     } catch (error) {
+      console.error("Payment error:", error);
       this.handlePaymentError(error);
     }
   }
