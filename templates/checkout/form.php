@@ -5,6 +5,8 @@ $public_key = $opn_api->get_public_key();
 
 <script>
     const opnPublicKey = '<?php echo esc_js($public_key); ?>';
+        // Добавляем данные о пакетах из PHP в JavaScript
+        const packagesData = <?php echo json_encode($packages); ?>;
 </script>
 
 <div class="sr-checkout-container">

@@ -28,26 +28,18 @@ class OPN_API
         error_log('Charge data: ' . print_r($data, true));
         $endpoint = '/charges';
 
-        $body = array(
-            'amount' => $data['amount'],
-            'currency' => $data['currency'] ?? 'THB',
-            'source' => $data['source'] ?? $data['token'],
-            'metadata' => array(
-                'order_id' => $data['order_id'] ?? 'temp',
-                'payment_type' => $data['payment_type'] ?? 'card',
-                'website' => $data['website'] ?? get_site_url()
-            )
-        );
+        try {
+            $response = $this->request('POST', $endpoint, $data);
 
-        if (isset($data['customer'])) {
-            $body['customer'] = $data['customer'];
+            // Логируем ответ для отладки
+            error_log('OPN API Response: ' . print_r($response, true));
+
+            return $response;
+
+        } catch (Exception $e) {
+            error_log('OPN API Error: ' . $e->getMessage());
+            return new WP_Error('opn_api_error', $e->getMessage());
         }
-
-        if (isset($data['return_uri'])) {
-            $body['return_uri'] = $data['return_uri'];
-        }
-
-        return $this->request('POST', $endpoint, $body);
     }
 
     /**
@@ -112,35 +104,33 @@ class OPN_API
      */
     private function request($method, $endpoint, $body = null)
     {
-        $args = array(
+        $args = [
             'method' => $method,
-            'headers' => array(
+            'headers' => [
                 'Authorization' => 'Basic ' . base64_encode($this->secret_key . ':'),
-                'Content-Type' => 'application/json'
-            ),
-            'timeout' => 30
-        );
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json'
+            ],
+            'timeout' => 30,
+            'sslverify' => true
+        ];
 
         if ($body !== null) {
             $args['body'] = json_encode($body);
         }
 
-        $response = wp_remote_request($this->api_base . $endpoint, $args);
-        error_log('API Response: ' . wp_remote_retrieve_body($response));
+        $url = $this->api_base . $endpoint;
+        $response = wp_remote_request($url, $args);
 
         if (is_wp_error($response)) {
-            return $response;
+            throw new Exception($response->get_error_message());
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
         $code = wp_remote_retrieve_response_code($response);
 
-        if ($code !== 200) {
-            return new WP_Error(
-                'opn_api_error',
-                isset($body['message']) ? $body['message'] : 'Unknown error',
-                array('status' => $code)
-            );
+        if ($code >= 400) {
+            throw new Exception(isset($body['message']) ? $body['message'] : 'Unknown error');
         }
 
         return $body;

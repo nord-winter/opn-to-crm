@@ -42,6 +42,7 @@ class OPNPaymentHandler {
 
       OmiseCard.configure({
         publicKey: srCheckoutParams.opnPublicKey,
+        image: "/your-logo.png",
         frameLabel: "Checkout",
         submitLabel: "Pay Now",
         currency: "THB",
@@ -72,14 +73,17 @@ class OPNPaymentHandler {
 
   handleCardPayment() {
     if (this.isSubmitting) return;
-
     this.setSubmitting(true);
 
     OmiseCard.open({
       amount: this.getAmount(),
       onCreateTokenSuccess: (token) => {
-        console.log("Token created:", token);
-        this.processPayment(token);
+        this.processPayment({
+          amount: this.getAmount(),
+          currency: "THB",
+          omiseToken: token,
+          payment_type: "card",
+        });
       },
       onFormClosed: () => {
         this.setSubmitting(false);
@@ -89,43 +93,16 @@ class OPNPaymentHandler {
 
   async handlePromptPayPayment() {
     if (this.isSubmitting) return;
+    this.setSubmitting(true);
 
     try {
-      this.setSubmitting(true);
-
-      const formData = new FormData();
-      formData.append("action", "sr_process_checkout");
-      formData.append("payment_method", "promptpay");
-      formData.append("nonce", srCheckoutParams.nonce);
-      formData.append("token", token);
-      formData.append("amount", amount);
-
-      // First create order
-      const orderResponse = await fetch(srCheckoutParams.ajaxUrl, {
-        method: "POST",
-        body: formData,
+      await this.processPayment({
+        amount: this.getAmount(),
+        currency: "THB",
+        omiseSource: true,
+        payment_type: "promptpay",
+        type: "promptpay",
       });
-
-      const orderResult = await orderResponse.json();
-
-      if (!orderResult.success) {
-        throw new Error(orderResult.data.message || "Failed to create order");
-      }
-
-      // Then create PromptPay source
-      const sourceResult = await this.createPromptPaySource(
-        orderResult.data.order_id
-      );
-
-      if (sourceResult.data && sourceResult.data.id) {
-        this.displayQRCode(sourceResult.data);
-        this.startPaymentStatusPolling(
-          sourceResult.data.id,
-          orderResult.data.order_id
-        );
-      } else {
-        throw new Error("Failed to create PromptPay QR code");
-      }
     } catch (error) {
       this.handlePaymentError(error);
     }
@@ -217,45 +194,39 @@ class OPNPaymentHandler {
     return result.data;
   }
 
-  async processPayment(token) {
+  async processPayment(paymentData) {
     try {
-      const formData = new URLSearchParams({
-        action: "sr_process_payment",
-        nonce: srCheckoutParams.nonce,
-        token: token,
-        amount: this.getAmount(),
-        currency: "THB",
-        payment_type: "card",
-        return_uri: `${window.location.origin}/checkout/complete/`,
-      });
+        const response = await fetch(srCheckoutParams.ajaxUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                action: 'sr_process_payment',
+                nonce: srCheckoutParams.nonce,
+                ...paymentData
+            })
+        });
 
-      const response = await fetch(srCheckoutParams.ajaxUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData,
-      });
+        const result = await response.json();
 
-      const result = await response.json();
-      console.log("Payment result:", result);
+        if (!result.success) {
+            throw new Error(result.data.message);
+        }
 
-      if (!result.success) {
-        throw new Error(result.data.message || "Ошибка обработки платежа");
-      }
+        if (result.data.qr_code_uri) {
+            this.displayQRCode(result.data);
+            this.startPaymentStatusPolling(result.data.transactionId);
+        } else if (result.data.authorize_uri) {
+            window.location.href = result.data.authorize_uri;
+        } else {
+            this.handlePaymentSuccess(result.data);
+        }
 
-      const data = result.data;
-
-      if (data.authorizeUri) {
-        window.location.href = data.authorizeUri;
-      } else {
-        this.handlePaymentSuccess(data);
-      }
     } catch (error) {
-      console.error("Payment error:", error);
-      this.handlePaymentError(error);
+        this.handlePaymentError(error);
     }
-  }
+}
 
   setSubmitting(submitting) {
     this.isSubmitting = submitting;

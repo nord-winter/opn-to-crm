@@ -27,6 +27,44 @@ class SR_API {
         $this->api_token = get_option('sr_api_token');
     }
 
+        /**
+     * Make GraphQL request
+     * 
+     * @param string $query GraphQL query
+     * @param array $variables Query variables
+     * @return array|WP_Error Response or error
+     */
+    public function graphql_request($query, $variables = []) {
+        $company_id = get_option('sr_company_id');
+        $endpoint = $this->api_url . $company_id . '/CRM';
+
+        $response = wp_remote_post($endpoint, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . get_option('sr_api_token'),
+                'Content-Type' => 'application/json'
+            ],
+            'body' => json_encode([
+                'query' => $query,
+                'variables' => $variables
+            ]),
+            'timeout' => 30
+        ]);
+
+        if (is_wp_error($response)) {
+            error_log('API Error: ' . $response->get_error_message());
+            return $response;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        if (isset($body['errors'])) {
+            error_log('API Error: ' . json_encode($body['errors']));
+            return new WP_Error('graphql_error', $body['errors'][0]['message']);
+        }
+
+        return $body['data'];
+    }
+
     /**
      * Create order in SalesRender
      * 
@@ -39,18 +77,17 @@ class SR_API {
                 orderMutation {
                     addOrder(input: $input) {
                         id
-                        status
-                        created
+                        status {
+                            id
+                            name
+                        }
+                        createdAt
                     }
                 }
             }
         ';
-
-        $variables = array(
-            'input' => $order_data
-        );
-
-        return $this->graphql_request($mutation, $variables);
+    
+        return $this->graphql_request($mutation, ['input' => $order_data]);
     }
 
     /**
@@ -82,48 +119,7 @@ class SR_API {
         return $this->graphql_request($mutation, $variables);
     }
 
-    /**
-     * Make GraphQL request
-     * 
-     * @param string $query GraphQL query
-     * @param array $variables Query variables
-     * @return array|WP_Error Response or error
-     */
-    private function graphql_request($query, $variables = array()) {
-        $headers = array(
-            'Authorization' => 'Bearer ' . $this->api_token,
-            'Content-Type' => 'application/json'
-        );
 
-        $body = array(
-            'query' => $query,
-            'variables' => $variables
-        );
-
-        $response = wp_remote_post(
-            $this->api_url . $this->company_id . '/graphql',
-            array(
-                'headers' => $headers,
-                'body' => json_encode($body),
-                'timeout' => 30
-            )
-        );
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (isset($body['errors'])) {
-            return new WP_Error(
-                'graphql_error',
-                'GraphQL Error: ' . $body['errors'][0]['message']
-            );
-        }
-
-        return $body['data'];
-    }
 
     /**
      * Format order data for SalesRender

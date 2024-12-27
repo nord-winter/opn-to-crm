@@ -45,54 +45,115 @@ class SR_Payment
      */
     public function ajax_process_payment()
     {
+        error_log('POST data: ' . print_r($_POST, true));
         try {
             if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
                 throw new Exception('Invalid nonce');
             }
+            error_log('Payment data: ' . print_r($_POST, true));
 
-            $token = sanitize_text_field($_POST['token']);
+            // Создаем заказ в CRM
+            $sr_api = new SR_API();
+            $order_data = $this->prepare_order_data($_POST);
+            $order_result = $sr_api->create_order($order_data);
+
+            if (is_wp_error($order_result)) {
+                throw new Exception($order_result->get_error_message());
+            }
+
+            $order_id = $order_result['orderMutation']['addOrder']['id'];
             $amount = absint($_POST['amount']);
-            $payment_type = sanitize_text_field($_POST['payment_type']); // Добавляем тип платежа
+            $payment_type = sanitize_text_field($_POST['payment_type']);
+            $return_uri = home_url('/checkout/complete/');
 
             if ($payment_type === 'card') {
-                $charge_data = array(
+                $token = sanitize_text_field($_POST['omiseToken']);
+                $charge_data = [
                     'amount' => $amount,
                     'currency' => 'THB',
                     'card' => $token,
-                    'return_uri' => home_url('/checkout/complete/'),
-                    'metadata' => array(
-                        'payment_type' => 'card',
-                        'website' => get_site_url()
-                    )
-                );
+                    'return_uri' => $return_uri,
+                    'metadata' => ['order_id' => $order_id]
+                ];
             } else {
-                // PromptPay логика
-                $source = $this->opn_api->create_source(array(
+                $source = $this->opn_api->create_source([
                     'type' => 'promptpay',
                     'amount' => $amount,
                     'currency' => 'THB'
-                ));
+                ]);
 
-                $charge_data = array(
+                if (is_wp_error($source)) {
+                    throw new Exception($source->get_error_message());
+                }
+
+                $charge_data = [
                     'amount' => $amount,
                     'currency' => 'THB',
                     'source' => $source['id'],
-                    'return_uri' => home_url('/checkout/complete/')
-                );
+                    'return_uri' => $return_uri,
+                    'metadata' => ['order_id' => $order_id]
+                ];
             }
 
             $result = $this->opn_api->create_charge($charge_data);
+            if (is_wp_error($result)) {
+                throw new Exception($result->get_error_message());
+            }
 
-            wp_send_json_success([
-                'id' => $result['id'],
-                'status' => $result['status'],
-                'authorize_uri' => $result['authorize_uri'] ?? null,
-                'qr_code_uri' => $result['source']['scannable_code']['image']['download_uri'] ?? null
-            ]);
+            wp_send_json_success($result);
 
         } catch (Exception $e) {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
+    }
+
+    private function prepare_order_data($post_data)
+    {
+        return [
+            'statusId' => get_option('sr_default_status_id', '19'),
+            'projectId' => get_option('sr_project_id'),
+            'orderData' => [
+                'humanNameFields' => [
+                    [
+                        'field' => 'name1',
+                        'value' => [
+                            'firstName' => sanitize_text_field($post_data['first_name']),
+                            'lastName' => sanitize_text_field($post_data['last_name'])
+                        ]
+                    ]
+                ],
+                'phoneFields' => [
+                    [
+                        'field' => 'phone',
+                        'value' => '+66' . preg_replace('/[^0-9]/', '', sanitize_text_field($post_data['phone']))
+                    ]
+                ],
+                'addressFields' => [
+                    [
+                        'field' => 'address',
+                        'value' => [
+                            'postcode' => sanitize_text_field($post_data['postal_code']),
+                            'region' => sanitize_text_field($post_data['province']),
+                            'city' => sanitize_text_field($post_data['city']),
+                            'address_1' => sanitize_text_field($post_data['address'])
+                        ]
+                    ]
+                ]
+            ],
+            'cart' => [
+                'items' => [
+                    [
+                        'itemId' => absint($post_data['package_id']),
+                        'quantity' => 1,
+                        'variation' => 1
+                    ]
+                ]
+            ],
+            'source' => [
+                'refererUri' => wp_get_referer(),
+                'ip' => $_SERVER['REMOTE_ADDR']
+            ]
+        ];
     }
 
     /**
