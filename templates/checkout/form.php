@@ -1,12 +1,18 @@
 <?php
+$packages = array(
+    array('id' => 4, 'name' => '4x', 'units' => 40, 'discount' => 15, 'price' => 3400),
+    array('id' => 3, 'name' => '3x', 'units' => 30, 'discount' => 10, 'price' => 2700),
+    array('id' => 2, 'name' => '2x', 'units' => 20, 'discount' => 5, 'price' => 1900),
+    array('id' => 1, 'name' => '1x', 'units' => 10, 'discount' => 0, 'price' => 1000),
+);
 $opn_api = new OPN_API();
 $public_key = $opn_api->get_public_key();
 ?>
 
 <script>
     const opnPublicKey = '<?php echo esc_js($public_key); ?>';
-        // Добавляем данные о пакетах из PHP в JavaScript
-        const packagesData = <?php echo json_encode($packages); ?>;
+    // Добавляем данные о пакетах из PHP в JavaScript
+    const packagesData = <?php echo json_encode($packages); ?>;
 </script>
 
 <div class="sr-checkout-container">
@@ -25,13 +31,6 @@ $public_key = $opn_api->get_public_key();
                 <h2 class="sr-section-title"><?php _e('Select Package', 'opn-to-crm'); ?></h2>
                 <div class="sr-package-grid">
                     <?php
-                    $packages = array(
-                        array('id' => 4, 'name' => '4x', 'units' => 40, 'discount' => 15, 'price' => 3400),
-                        array('id' => 3, 'name' => '3x', 'units' => 30, 'discount' => 10, 'price' => 2700),
-                        array('id' => 2, 'name' => '2x', 'units' => 20, 'discount' => 5, 'price' => 1900),
-                        array('id' => 1, 'name' => '1x', 'units' => 10, 'discount' => 0, 'price' => 1000),
-                    );
-
                     foreach ($packages as $package): ?>
                         <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>">
                             <h3><?php echo sprintf(__('Package %s', 'opn-to-crm'), $package['name']); ?></h3>
@@ -67,7 +66,8 @@ $public_key = $opn_api->get_public_key();
                         <label for="phone"><?php _e('Phone', 'opn-to-crm'); ?> *</label>
                         <div class="sr-phone-input">
                             <span class="sr-phone-prefix">+66</span>
-                            <input type="tel" id="phone" name="phone" placeholder="9XXXXXXXX" required>
+                            <input type="tel" id="phone" name="phone" placeholder="9XXXXXXXX" pattern="[0-9]{9}"
+                                maxlength="9" required>
                         </div>
                     </div>
                 </div>

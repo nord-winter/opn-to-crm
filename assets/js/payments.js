@@ -61,14 +61,52 @@ class OPNPaymentHandler {
       });
     });
 
-    this.submitButton.addEventListener("click", (e) => {
+    this.submitButton.addEventListener("click", async (e) => {
       e.preventDefault();
-      if (this.selectedPaymentMethod === "card") {
-        this.handleCardPayment();
-      } else {
-        this.handlePromptPayPayment();
+      if (this.isSubmitting) return;
+
+      try {
+        this.setSubmitting(true);
+
+        // Сначала создаем заказ в CRM
+        const orderData = await this.createOrder();
+
+        // После успешного создания заказа обрабатываем оплату
+        if (this.selectedPaymentMethod === "card") {
+          await this.handleCardPayment(orderData.id);
+        } else {
+          await this.handlePromptPayPayment(orderData.id);
+        }
+      } catch (error) {
+        this.handlePaymentError(error);
       }
     });
+  }
+
+  async createOrder() {
+    const formData = {
+      action: "sr_create_order",
+      nonce: srCheckoutParams.nonce,
+      first_name: document.getElementById("first_name").value,
+      last_name: document.getElementById("last_name").value,
+      email: document.getElementById("email").value,
+      phone: document.getElementById("phone").value,
+      address: document.getElementById("address").value,
+      city: document.getElementById("city").value,
+      postal_code: document.getElementById("postal_code").value,
+      package_id: document.querySelector(".sr-package.selected").dataset
+        .packageId,
+    };
+
+    const response = await fetch(srCheckoutParams.ajaxUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(formData),
+    });
+
+    const result = await response.json();
+    if (!result.success) throw new Error(result.data.message);
+    return result.data;
   }
 
   handleCardPayment() {
@@ -196,37 +234,36 @@ class OPNPaymentHandler {
 
   async processPayment(paymentData) {
     try {
-        const response = await fetch(srCheckoutParams.ajaxUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                action: 'sr_process_payment',
-                nonce: srCheckoutParams.nonce,
-                ...paymentData
-            })
-        });
+      const response = await fetch(srCheckoutParams.ajaxUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          action: "sr_process_payment",
+          nonce: srCheckoutParams.nonce,
+          ...paymentData,
+        }),
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (!result.success) {
-            throw new Error(result.data.message);
-        }
+      if (!result.success) {
+        throw new Error(result.data.message);
+      }
 
-        if (result.data.qr_code_uri) {
-            this.displayQRCode(result.data);
-            this.startPaymentStatusPolling(result.data.transactionId);
-        } else if (result.data.authorize_uri) {
-            window.location.href = result.data.authorize_uri;
-        } else {
-            this.handlePaymentSuccess(result.data);
-        }
-
+      if (result.data.qr_code_uri) {
+        this.displayQRCode(result.data);
+        this.startPaymentStatusPolling(result.data.transactionId);
+      } else if (result.data.authorize_uri) {
+        window.location.href = result.data.authorize_uri;
+      } else {
+        this.handlePaymentSuccess(result.data);
+      }
     } catch (error) {
-        this.handlePaymentError(error);
+      this.handlePaymentError(error);
     }
-}
+  }
 
   setSubmitting(submitting) {
     this.isSubmitting = submitting;

@@ -149,7 +149,7 @@ class SR_API {
                 ),
                 'addressFields' => array(
                     array(
-                        'field' => 'address',
+                        'field' => 'adress',
                         'value' => array(
                             'postcode' => $data['postcode'],
                             'region' => $data['region'],

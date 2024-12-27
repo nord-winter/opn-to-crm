@@ -109,6 +109,13 @@ class SR_Payment
 
     private function prepare_order_data($post_data)
     {
+        $phone = preg_replace('/[^0-9]/', '', $post_data['phone']);
+        if (strlen($phone) > 9) {
+            $phone = substr($phone, -9); // Берем последние 9 цифр
+        }
+        $phone = '+66' . $phone;
+
+
         return [
             'statusId' => get_option('sr_default_status_id', '19'),
             'projectId' => get_option('sr_project_id'),
@@ -125,7 +132,7 @@ class SR_Payment
                 'phoneFields' => [
                     [
                         'field' => 'phone',
-                        'value' => '+66' . preg_replace('/[^0-9]/', '', sanitize_text_field($post_data['phone']))
+                        'value' => $phone
                     ]
                 ],
                 'addressFields' => [

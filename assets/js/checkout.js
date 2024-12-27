@@ -165,12 +165,9 @@ class CheckoutHandler {
      */
     handlePhoneInput(event) {
         let value = event.target.value.replace(/\D/g, '');
-        
-        // Ограничиваем длину до 10 цифр
-        if (value.length > 10) {
-            value = value.substr(0, 10);
+        if (value.length > 9) {
+            value = value.substr(0, 9);
         }
-        
         event.target.value = value;
     }
 
@@ -286,7 +283,7 @@ class CheckoutHandler {
      * Валидация телефона
      */
     validatePhone(phone) {
-        return /^[0-9]{9,10}$/.test(phone.replace(/\D/g, ''));
+        return /^[0-9]{9}$/.test(phone.replace(/\D/g, '')); // Проверяем только 9 цифр
     }
 
     /**
