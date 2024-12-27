@@ -148,7 +148,7 @@ $public_key = $opn_api->get_public_key();
                     <span><?php _e('Total', 'opn-to-crm'); ?></span>
                     <span id="summary-total">฿0</span>
                 </div>
-                <button type="submit" class="sr-submit-button" id="sr-submit">
+                <button type="button" class="sr-submit-button" id="sr-submit">
                     <span class="sr-button-text"><?php _e('Complete Order', 'opn-to-crm'); ?></span>
                     <span class="sr-button-loading" style="display: none;">
                         <span class="sr-spinner"></span>

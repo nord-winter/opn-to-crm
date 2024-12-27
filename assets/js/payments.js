@@ -92,16 +92,38 @@ class OPNPaymentHandler {
     try {
       this.setSubmitting(true);
 
-      // Создаем QR-код для PromptPay
-      const sourceResult = await this.createPromptPaySource();
+      const formData = new FormData();
+      formData.append("action", "sr_process_checkout");
+      formData.append("payment_method", "promptpay");
+      formData.append("nonce", srCheckoutParams.nonce);
+      formData.append("token", token);
+      formData.append("amount", amount);
+
+      // First create order
+      const orderResponse = await fetch(srCheckoutParams.ajaxUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      const orderResult = await orderResponse.json();
+
+      if (!orderResult.success) {
+        throw new Error(orderResult.data.message || "Failed to create order");
+      }
+
+      // Then create PromptPay source
+      const sourceResult = await this.createPromptPaySource(
+        orderResult.data.order_id
+      );
 
       if (sourceResult.data && sourceResult.data.id) {
-        // Отображаем QR-код
         this.displayQRCode(sourceResult.data);
-        // Начинаем проверку статуса оплаты
-        this.startPaymentStatusPolling(sourceResult.data.id);
+        this.startPaymentStatusPolling(
+          sourceResult.data.id,
+          orderResult.data.order_id
+        );
       } else {
-        throw new Error("Не удалось создать QR-код PromptPay");
+        throw new Error("Failed to create PromptPay QR code");
       }
     } catch (error) {
       this.handlePaymentError(error);
@@ -146,28 +168,31 @@ class OPNPaymentHandler {
     container.innerHTML = qrHtml;
   }
 
-  startPaymentStatusPolling(sourceId) {
+  startPaymentStatusPolling(sourceId, orderId) {
     let attempts = 0;
-    const maxAttempts = 60; // 5 минут при интервале в 5 секунд
+    const maxAttempts = 60; // 5 minutes at 5-second intervals
+    const pollInterval = 5000; // 5 seconds
 
-    const pollInterval = setInterval(async () => {
+    const poll = setInterval(async () => {
       attempts++;
 
       try {
         const status = await this.checkPaymentStatus(sourceId);
 
         if (status.paid) {
-          clearInterval(pollInterval);
-          await this.handlePaymentSuccess(status);
+          clearInterval(poll);
+          this.handlePaymentSuccess({
+            redirectUrl: `${window.location.origin}/checkout/thank-you/?order_id=${orderId}`,
+          });
         } else if (status.expired || attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          throw new Error("Время ожидания платежа истекло");
+          clearInterval(poll);
+          throw new Error("Payment timeout. Please try again.");
         }
       } catch (error) {
-        clearInterval(pollInterval);
+        clearInterval(poll);
         this.handlePaymentError(error);
       }
-    }, 5000);
+    }, pollInterval);
   }
 
   async checkPaymentStatus(sourceId) {
@@ -207,7 +232,7 @@ class OPNPaymentHandler {
       });
 
       const result = await response.json();
-
+      console.log(result);
       if (!result.success) {
         throw new Error(result.data.message || "Ошибка обработки платежа");
       }
@@ -245,7 +270,14 @@ class OPNPaymentHandler {
   }
 
   handlePaymentSuccess(data) {
-    window.location.href = data.redirectUrl;
+    // Check if redirectUrl exists, otherwise use a default
+    const redirectUrl = data.redirectUrl || window.location.href;
+
+    // Add success parameter to URL
+    const successUrl = new URL(redirectUrl);
+    successUrl.searchParams.append("payment_status", "success");
+
+    window.location.href = successUrl.toString();
   }
 
   handlePaymentError(error) {

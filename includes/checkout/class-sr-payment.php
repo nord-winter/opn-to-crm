@@ -32,9 +32,79 @@ class SR_Payment
 
         add_action('wp_ajax_sr_create_promptpay_source', array($this, 'ajax_create_promptpay_source'));
         add_action('wp_ajax_nopriv_sr_create_promptpay_source', array($this, 'ajax_create_promptpay_source'));
-        
+
         add_action('wp_ajax_sr_check_payment_status', array($this, 'ajax_check_payment_status'));
         add_action('wp_ajax_nopriv_sr_check_payment_status', array($this, 'ajax_check_payment_status'));
+
+        add_action('wp_ajax_sr_process_payment', array($this, 'ajax_process_payment'));
+        add_action('wp_ajax_nopriv_sr_process_payment', array($this, 'ajax_process_payment'));
+    }
+
+    /**
+     * Обработчик AJAX для процесса оплаты
+     */
+    public function ajax_process_payment()
+    {
+        try {
+            // Проверяем nonce
+            if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
+                throw new Exception(__('Invalid security token', 'opn-to-crm'));
+            }
+
+            // Проверяем обязательные параметры
+            if (empty($_POST['token']) || empty($_POST['amount'])) {
+                throw new Exception(__('Missing required parameters', 'opn-to-crm'));
+            }
+
+            // Получаем и валидируем данные
+            $token = sanitize_text_field($_POST['token']);
+            $amount = absint($_POST['amount']);
+
+            if ($amount <= 0) {
+                throw new Exception(__('Invalid amount', 'opn-to-crm'));
+            }
+
+            // Создаем платёж через OPN API
+            $charge_data = array(
+                'amount' => $amount,
+                'currency' => 'THB',
+                'source' => $token,
+                'return_uri' => add_query_arg('order_id', 'temp', home_url('/checkout/complete/')),
+                'metadata' => array(
+                    'payment_type' => 'card',
+                    'website' => get_site_url()
+                )
+            );
+
+            $result = $this->opn_api->create_charge($charge_data);
+
+            if (is_wp_error($result)) {
+                throw new Exception($result->get_error_message());
+            }
+
+            // Проверяем результат создания платежа
+            if (!isset($result['id'])) {
+                throw new Exception(__('Invalid payment response', 'opn-to-crm'));
+            }
+
+            // Формируем ответ
+            $response = array(
+                'id' => $result['id'],
+                'status' => $result['status']
+            );
+
+            // Добавляем URL для 3D Secure если требуется
+            if (isset($result['authorize_uri']) && !empty($result['authorize_uri'])) {
+                $response['authorizeUri'] = $result['authorize_uri'];
+            }
+
+            wp_send_json_success($response);
+
+        } catch (Exception $e) {
+            wp_send_json_error(array(
+                'message' => $e->getMessage()
+            ));
+        }
     }
 
     /**
@@ -323,6 +393,9 @@ class SR_Payment
                 throw new Exception($result->get_error_message());
             }
 
+            // Add detailed logging
+            error_log('Payment status check - Source ID: ' . $source_id . ', Status: ' . $result['status']);
+
             wp_send_json_success(array(
                 'paid' => $result['status'] === 'used',
                 'expired' => $result['status'] === 'expired',
@@ -330,9 +403,11 @@ class SR_Payment
             ));
 
         } catch (Exception $e) {
+            error_log('Payment status check error: ' . $e->getMessage());
             wp_send_json_error(array(
                 'message' => $e->getMessage()
             ));
         }
     }
+
 }
