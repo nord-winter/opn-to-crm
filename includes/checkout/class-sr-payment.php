@@ -402,43 +402,35 @@ class SR_Payment
     /**
      * Создание PromptPay QR-кода
      */
-    public function ajax_create_promptpay_source()
-    {
+    public function ajax_create_promptpay_source() {
         try {
             check_ajax_referer('sr_checkout_nonce', 'nonce');
-            $amount = absint($_POST['amount']);
-
+            
+            $amount = absint($_POST['amount'] ?? 0);
             if (!$amount) {
                 throw new Exception('Invalid amount');
             }
-
+    
             $source = $this->opn_api->create_source([
-                'amount' => $amount,
-                'currency' => 'THB'
+                'amount' => $amount
             ]);
-
+    
             if (is_wp_error($source)) {
                 throw new Exception($source->get_error_message());
             }
-
-            // Validate required fields exist
-            if (empty($source['id'])) {
-                throw new Exception('Invalid source response: missing ID');
+    
+            error_log('OPN Source Result: ' . print_r($source, true));
+    
+            if (empty($source['scannable_code']['image']['uri'])) {
+                throw new Exception('QR code not available');
             }
-
-            $response = [
+    
+            wp_send_json_success([
                 'id' => $source['id'],
                 'amount' => $amount,
-                'qr_image' => isset($source['qr']['image']['download_uri']) ?
-                    $source['qr']['image']['download_uri'] : null
-            ];
-
-            if (isset($source['expires_at'])) {
-                $response['expires_at'] = $source['expires_at'];
-            }
-
-            wp_send_json_success($response);
-
+                'qr_image' => $source['scannable_code']['image']['uri']
+            ]);
+    
         } catch (Exception $e) {
             error_log('PromptPay error: ' . $e->getMessage());
             wp_send_json_error(['message' => $e->getMessage()]);
@@ -447,38 +439,26 @@ class SR_Payment
     /**
      * Проверка статуса платежа
      */
-    public function ajax_check_payment_status()
-    {
+    public function ajax_check_payment_status() {
         try {
-            if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
-                throw new Exception(__('Invalid security token', 'opn-to-crm'));
-            }
-
-            $source_id = isset($_POST['source_id']) ? sanitize_text_field($_POST['source_id']) : '';
+            check_ajax_referer('sr_checkout_nonce', 'nonce');
+            
+            $source_id = sanitize_text_field($_POST['source_id'] ?? '');
             if (!$source_id) {
-                throw new Exception(__('Invalid source ID', 'opn-to-crm'));
+                throw new Exception('Invalid source ID');
             }
-
+    
             $result = $this->opn_api->check_source($source_id);
-
-            if (is_wp_error($result)) {
-                throw new Exception($result->get_error_message());
-            }
-
-            // Add detailed logging
-            error_log('Payment status check - Source ID: ' . $source_id . ', Status: ' . $result['status']);
-
-            wp_send_json_success(array(
-                'paid' => $result['status'] === 'used',
-                'expired' => $result['status'] === 'expired',
-                'status' => $result['status']
-            ));
-
+            error_log('Payment status check - Source ID: ' . $source_id . ', Status: ' . ($result['charge_status'] ?? 'unknown'));
+    
+            wp_send_json_success([
+                'paid' => ($result['charge_status'] ?? '') === 'successful',
+                'expired' => ($result['charge_status'] ?? '') === 'expired',
+                'status' => $result['charge_status'] ?? 'unknown'
+            ]);
+    
         } catch (Exception $e) {
-            error_log('Payment status check error: ' . $e->getMessage());
-            wp_send_json_error(array(
-                'message' => $e->getMessage()
-            ));
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 

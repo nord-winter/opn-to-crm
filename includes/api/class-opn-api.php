@@ -31,7 +31,6 @@ class OPN_API
         try {
             $response = $this->request('POST', $endpoint, $data);
 
-            // Логируем ответ для отладки
             error_log('OPN API Response: ' . print_r($response, true));
 
             return $response;
@@ -48,19 +47,42 @@ class OPN_API
      * @param array $data Source data
      * @return array|WP_Error
      */
-    public function create_source($data) {
-        $endpoint = '/sources';
+    public function create_source($data)
+    {
+        try {
+            $source = [
+                'type' => 'promptpay',
+                'amount' => $data['amount'],
+                'currency' => 'THB',
+                'platform_type' => 'WEB',
+            ];
     
-        $body = array(
-            'type' => 'promptpay',
-            'amount' => $data['amount'],
-            'currency' => isset($data['currency']) ? $data['currency'] : 'THB',
-            'livemode' => get_option('opn_test_mode') ? false : true
-        );
+            $source_response = $this->request('POST', '/sources', $source);
+            
+            if (empty($source_response['id'])) {
+                throw new Exception('Failed to create source');
+            }
     
-        $result = $this->request('POST', $endpoint, $body);
-        error_log('OPN Source Result: ' . print_r($result, true));
-        return $result;
+            $charge = $this->create_charge([
+                'amount' => $data['amount'],
+                'currency' => 'THB',
+                'source' => $source_response['id']
+            ]);
+    
+            if (empty($charge['source']['scannable_code']['image']['download_uri'])) {
+                throw new Exception('QR code not available');
+            }
+    
+            return wp_send_json_success([
+                'source' => $source_response,
+                'charge' => $charge,
+                'qr_code_uri' => $charge['source']['scannable_code']['image']['download_uri']
+            ]);
+    
+        } catch (Exception $e) {
+            error_log('PromptPay error: ' . $e->getMessage());
+            return wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -111,15 +133,14 @@ class OPN_API
             'headers' => [
                 'Authorization' => 'Basic ' . base64_encode($this->secret_key . ':'),
                 'Content-Type' => 'application/json',
-                'Accept' => 'application/json'
+                'Accept' => 'application/json',
+                'Omise-Version' => '2019-05-29'
             ],
+            'body' => $body ? json_encode($body) : null,
             'timeout' => 30,
             'sslverify' => true
         ];
 
-        if ($body !== null) {
-            $args['body'] = json_encode($body);
-        }
 
         $url = $this->api_base . $endpoint;
         $response = wp_remote_request($url, $args);

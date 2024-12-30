@@ -123,92 +123,66 @@ class OPNPaymentHandler {
   }
 
   displayQRCode(sourceData) {
-    // Create modal
-    const modal = document.createElement('div');
-    modal.className = 'sr-qr-modal';
+    const modal = document.createElement("div");
+    modal.className = "sr-qr-modal";
     modal.innerHTML = `
-      <div class="sr-qr-modal-content">
-        <span class="sr-qr-close">&times;</span>
-        <div class="sr-qr-wrapper">
-          <img src="${sourceData.qr_image}" alt="PromptPay QR Code" class="sr-qr-image">
-          <div class="sr-qr-instructions">
-            <p>1. Open your banking app</p>
-            <p>2. Scan QR code</p>
-            <p>3. Confirm payment in your app</p>
-          </div>
+        <div class="sr-qr-modal-content">
+            <span class="sr-qr-close">&times;</span>
+            <div class="sr-qr-wrapper">
+                <img src="${
+                  sourceData.qr_code_uri
+                }" alt="PromptPay QR Code" class="sr-qr-image">
+                <div class="sr-qr-amount">฿${(
+                  sourceData.charge.amount / 100
+                ).toFixed(2)}</div>
+                <div class="sr-qr-instructions">
+                    <p>1. Open your banking app</p>
+                    <p>2. Scan this QR code</p>
+                    <p>3. Confirm payment in your app</p>
+                </div>
+            </div>
         </div>
-      </div>
     `;
-  
-    // Add modal styles
-    const styles = document.createElement('style');
-    styles.textContent = `
-      .sr-qr-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-      }
-      .sr-qr-modal-content {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        position: relative;
-        max-width: 400px;
-        width: 90%;
-      }
-      .sr-qr-close {
-        position: absolute;
-        right: 10px;
-        top: 10px;
-        font-size: 24px;
-        cursor: pointer;
-      }
-      .sr-qr-image {
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
-        display: block;
-      }
-      .sr-qr-instructions {
-        margin-top: 20px;
-        text-align: center;
-      }
-    `;
-  
-    document.head.appendChild(styles);
+
     document.body.appendChild(modal);
-  
-    // Close button functionality
-    const closeBtn = modal.querySelector('.sr-qr-close');
+
+    const closeBtn = modal.querySelector(".sr-qr-close");
     closeBtn.onclick = () => modal.remove();
+
+    this.startPaymentStatusPolling(sourceData.source.id);
   }
 
-  startPaymentStatusPolling(sourceId, orderId) {
+  startPaymentStatusPolling(sourceId) {
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes at 5-second intervals
-    const pollInterval = 5000; // 5 seconds
+    const maxAttempts = 60;
+    const pollInterval = 5000;
 
     const poll = setInterval(async () => {
       attempts++;
 
       try {
-        const status = await this.checkPaymentStatus(sourceId);
+        const result = await fetch(srCheckoutParams.ajaxUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            action: "sr_check_payment_status",
+            nonce: srCheckoutParams.nonce,
+            source_id: sourceId,
+          }),
+        });
 
-        if (status.paid) {
+        const response = await result.json();
+
+        if (!response.success) {
+          throw new Error(response.data.message);
+        }
+
+        if (response.data.paid) {
           clearInterval(poll);
-          this.handlePaymentSuccess({
-            redirectUrl: `${window.location.origin}/checkout/thank-you/?order_id=${orderId}`,
-          });
-        } else if (status.expired || attempts >= maxAttempts) {
+          window.location.href = "/complete/?status=success";
+        } else if (response.data.expired || attempts >= maxAttempts) {
           clearInterval(poll);
-          throw new Error("Payment timeout. Please try again.");
+          this.handlePaymentError(new Error("Payment timeout"));
         }
       } catch (error) {
         clearInterval(poll);
@@ -353,7 +327,7 @@ class OPNPaymentHandler {
 
   handlePaymentResult(data) {
     if (data.qr_code_uri) {
-      this.displayQRCode(data);
+      this.displayQRCode(data); 
       this.startPaymentStatusPolling(data.transactionId);
     } else if (data.authorize_uri) {
       window.location.href = data.authorize_uri;
