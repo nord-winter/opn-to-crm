@@ -48,17 +48,19 @@ class OPN_API
      * @param array $data Source data
      * @return array|WP_Error
      */
-    public function create_source($data)
-    {
+    public function create_source($data) {
         $endpoint = '/sources';
-
+    
         $body = array(
-            'type' => $data['type'],
+            'type' => 'promptpay',
             'amount' => $data['amount'],
-            'currency' => 'THB'
+            'currency' => isset($data['currency']) ? $data['currency'] : 'THB',
+            'livemode' => get_option('opn_test_mode') ? false : true
         );
-
-        return $this->request('POST', $endpoint, $body);
+    
+        $result = $this->request('POST', $endpoint, $body);
+        error_log('OPN Source Result: ' . print_r($result, true));
+        return $result;
     }
 
     /**

@@ -103,17 +103,6 @@ class CheckoutHandler {
             field.addEventListener('input', this.handleInputChange);
             field.addEventListener('blur', () => this.validateField(field));
         });
-
-        // Специальный обработчик для телефона
-        this.fields.phone.addEventListener('input', this.handlePhoneInput);
-
-        // Валидация при отправке формы
-        this.form.addEventListener('submit', (event) => {
-            const isValid = this.validateForm();
-            if (!isValid) {
-                event.preventDefault();
-            }
-        });
     }
 
     /**
@@ -122,17 +111,11 @@ class CheckoutHandler {
     handlePackageSelection(packageId, element) {
         // Удаляем выделение со всех пакетов
         this.packageElements.forEach(pkg => pkg.classList.remove('selected'));
-        
         // Выделяем выбранный пакет
         element.classList.add('selected');
-        
-        // Сохраняем выбранный пакет
+    
         this.selectedPackage = this.packages[packageId];
-        
-        // Обновляем сводку заказа
         this.updateOrderSummary();
-        
-        // Валидируем форму
         this.validateForm();
     }
 

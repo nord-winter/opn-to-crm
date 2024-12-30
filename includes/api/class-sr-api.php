@@ -151,8 +151,8 @@ class SR_API {
                     array(
                         'field' => 'adress',
                         'value' => array(
-                            'postcode' => $data['postcode'],
-                            'region' => $data['region'],
+                            'postcode' => $data['postal_code'],
+                            'region' => $data['country'],
                             'city' => $data['city'],
                             'address_1' => $data['address']
                         )

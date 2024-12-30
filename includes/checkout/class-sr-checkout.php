@@ -22,7 +22,7 @@ class SR_Checkout
 
         $this->init_hooks();
     }
-    
+
     private function init_hooks()
     {
         add_action('wp_ajax_sr_create_order', array($this, 'ajax_create_order'));
@@ -86,6 +86,7 @@ class SR_Checkout
             'email' => 'Email is required',
             'phone' => 'Phone is required',
             'address' => 'Address is required',
+            'country' => 'Country is required',
             'city' => 'City is required',
             'postal_code' => 'Postal code is required',
             'package_id' => 'Please select a package'
@@ -107,7 +108,7 @@ class SR_Checkout
         // Валидация телефона (9 цифр)
         $phone = preg_replace('/[^0-9]/', '', $validated['phone']);
         if (strlen($phone) !== 9) {
-            throw new Exception('Invalid phone number format');
+            throw new Exception('Invalid phone number format' . $phone);
         }
         $validated['phone'] = '+66' . $phone;
 

@@ -64,10 +64,10 @@ class SR_Payment
             $order_id = $order_result['orderMutation']['addOrder']['id'];
             $amount = absint($_POST['amount']);
             $payment_type = sanitize_text_field($_POST['payment_type']);
-            $return_uri = home_url('/checkout/complete/');
+            $return_uri = home_url('/complete/');
 
             if ($payment_type === 'card') {
-                $token = sanitize_text_field($_POST['omiseToken']);
+                $token = sanitize_text_field($_POST['card']);
                 $charge_data = [
                     'amount' => $amount,
                     'currency' => 'THB',
@@ -113,7 +113,7 @@ class SR_Payment
         if (strlen($phone) > 9) {
             $phone = substr($phone, -9); // Берем последние 9 цифр
         }
-        $phone = '+66' . $phone;
+        $phone = '0' . $phone;
 
 
         return [
@@ -137,10 +137,10 @@ class SR_Payment
                 ],
                 'addressFields' => [
                     [
-                        'field' => 'address',
+                        'field' => 'adress',
                         'value' => [
                             'postcode' => sanitize_text_field($post_data['postal_code']),
-                            'region' => sanitize_text_field($post_data['province']),
+                            'region' => sanitize_text_field($post_data['country']),
                             'city' => sanitize_text_field($post_data['city']),
                             'address_1' => sanitize_text_field($post_data['address'])
                         ]
@@ -405,39 +405,45 @@ class SR_Payment
     public function ajax_create_promptpay_source()
     {
         try {
-            if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
-                throw new Exception(__('Invalid security token', 'opn-to-crm'));
-            }
+            check_ajax_referer('sr_checkout_nonce', 'nonce');
+            $amount = absint($_POST['amount']);
 
-            $amount = isset($_POST['amount']) ? absint($_POST['amount']) : 0;
             if (!$amount) {
-                throw new Exception(__('Invalid amount', 'opn-to-crm'));
+                throw new Exception('Invalid amount');
             }
 
-            $source_data = array(
-                'type' => 'promptpay',
+            $source = $this->opn_api->create_source([
                 'amount' => $amount,
                 'currency' => 'THB'
-            );
+            ]);
 
-            $result = $this->opn_api->create_source($source_data);
-
-            if (is_wp_error($result)) {
-                throw new Exception($result->get_error_message());
+            if (is_wp_error($source)) {
+                throw new Exception($source->get_error_message());
             }
 
-            wp_send_json_success(array(
-                'id' => $result['id'],
-                'qr_image' => $result['qr']['image']['download_uri']
-            ));
+            // Validate required fields exist
+            if (empty($source['id'])) {
+                throw new Exception('Invalid source response: missing ID');
+            }
+
+            $response = [
+                'id' => $source['id'],
+                'amount' => $amount,
+                'qr_image' => isset($source['qr']['image']['download_uri']) ?
+                    $source['qr']['image']['download_uri'] : null
+            ];
+
+            if (isset($source['expires_at'])) {
+                $response['expires_at'] = $source['expires_at'];
+            }
+
+            wp_send_json_success($response);
 
         } catch (Exception $e) {
-            wp_send_json_error(array(
-                'message' => $e->getMessage()
-            ));
+            error_log('PromptPay error: ' . $e->getMessage());
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
-
     /**
      * Проверка статуса платежа
      */
@@ -474,6 +480,25 @@ class SR_Payment
                 'message' => $e->getMessage()
             ));
         }
+    }
+
+    public function check_payment_status($sourceId)
+    {
+        $result = $this->opn_api->check_source($sourceId);
+
+        if (is_wp_error($result)) {
+            return [
+                'paid' => false,
+                'expired' => false,
+                'status' => 'error'
+            ];
+        }
+
+        return [
+            'paid' => ($result['status'] ?? '') === 'used',
+            'expired' => ($result['status'] ?? '') === 'expired',
+            'status' => $result['status'] ?? 'unknown'
+        ];
     }
 
 }

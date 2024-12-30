@@ -56,8 +56,6 @@ class OPNPaymentHandler {
     this.paymentMethods.forEach((method) => {
       method.addEventListener("change", (e) => {
         this.selectedPaymentMethod = e.target.value;
-        this.promptPayForm.style.display =
-          this.selectedPaymentMethod === "promptpay" ? "block" : "none";
       });
     });
 
@@ -68,15 +66,14 @@ class OPNPaymentHandler {
       try {
         this.setSubmitting(true);
 
-        // Сначала создаем заказ в CRM
         const orderData = await this.createOrder();
 
-        // После успешного создания заказа обрабатываем оплату
-        if (this.selectedPaymentMethod === "card") {
-          await this.handleCardPayment(orderData.id);
-        } else {
-          await this.handlePromptPayPayment(orderData.id);
-        }
+        await this.processPayment({
+          order_id: orderData.id,
+          amount: this.getAmount(),
+          payment_type: this.selectedPaymentMethod,
+          currency: "THB",
+        });
       } catch (error) {
         this.handlePaymentError(error);
       }
@@ -87,15 +84,7 @@ class OPNPaymentHandler {
     const formData = {
       action: "sr_create_order",
       nonce: srCheckoutParams.nonce,
-      first_name: document.getElementById("first_name").value,
-      last_name: document.getElementById("last_name").value,
-      email: document.getElementById("email").value,
-      phone: document.getElementById("phone").value,
-      address: document.getElementById("address").value,
-      city: document.getElementById("city").value,
-      postal_code: document.getElementById("postal_code").value,
-      package_id: document.querySelector(".sr-package.selected").dataset
-        .packageId,
+      ...this.getFormData(),
     };
 
     const response = await fetch(srCheckoutParams.ajaxUrl, {
@@ -109,79 +98,96 @@ class OPNPaymentHandler {
     return result.data;
   }
 
-  handleCardPayment() {
-    if (this.isSubmitting) return;
-    this.setSubmitting(true);
-
-    OmiseCard.open({
-      amount: this.getAmount(),
-      onCreateTokenSuccess: (token) => {
-        this.processPayment({
-          amount: this.getAmount(),
-          currency: "THB",
-          omiseToken: token,
-          payment_type: "card",
-        });
-      },
-      onFormClosed: () => {
-        this.setSubmitting(false);
-      },
-    });
-  }
-
-  async handlePromptPayPayment() {
-    if (this.isSubmitting) return;
-    this.setSubmitting(true);
-
-    try {
-      await this.processPayment({
-        amount: this.getAmount(),
-        currency: "THB",
-        omiseSource: true,
-        payment_type: "promptpay",
-        type: "promptpay",
-      });
-    } catch (error) {
-      this.handlePaymentError(error);
-    }
-  }
-
   async createPromptPaySource() {
     const response = await fetch(srCheckoutParams.ajaxUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         action: "sr_create_promptpay_source",
         nonce: srCheckoutParams.nonce,
+        type: "promptpay",
+        barcode: "promptpay",
         amount: this.getAmount(),
+        currency: "THB",
+        livemode: true,
       }),
     });
 
     const result = await response.json();
     if (!result.success) {
       throw new Error(
-        result.data.message || "Ошибка создания PromptPay QR-кода"
+        result.data.message || "Error creating PromptPay QR code"
       );
     }
-
     return result;
   }
 
   displayQRCode(sourceData) {
-    const container = document.getElementById("promptpay-qr");
-    const qrHtml = `
-            <div class="sr-qr-wrapper">
-                <img src="${sourceData.qr_image}" alt="PromptPay QR Code" class="sr-qr-image">
-                <div class="sr-qr-instructions">
-                    <p>1. Откройте приложение вашего банка</p>
-                    <p>2. Отсканируйте QR-код</p>
-                    <p>3. Подтвердите оплату в приложении</p>
-                </div>
-            </div>
-        `;
-    container.innerHTML = qrHtml;
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'sr-qr-modal';
+    modal.innerHTML = `
+      <div class="sr-qr-modal-content">
+        <span class="sr-qr-close">&times;</span>
+        <div class="sr-qr-wrapper">
+          <img src="${sourceData.qr_image}" alt="PromptPay QR Code" class="sr-qr-image">
+          <div class="sr-qr-instructions">
+            <p>1. Open your banking app</p>
+            <p>2. Scan QR code</p>
+            <p>3. Confirm payment in your app</p>
+          </div>
+        </div>
+      </div>
+    `;
+  
+    // Add modal styles
+    const styles = document.createElement('style');
+    styles.textContent = `
+      .sr-qr-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .sr-qr-modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        position: relative;
+        max-width: 400px;
+        width: 90%;
+      }
+      .sr-qr-close {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        font-size: 24px;
+        cursor: pointer;
+      }
+      .sr-qr-image {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+        display: block;
+      }
+      .sr-qr-instructions {
+        margin-top: 20px;
+        text-align: center;
+      }
+    `;
+  
+    document.head.appendChild(styles);
+    document.body.appendChild(modal);
+  
+    // Close button functionality
+    const closeBtn = modal.querySelector('.sr-qr-close');
+    closeBtn.onclick = () => modal.remove();
   }
 
   startPaymentStatusPolling(sourceId, orderId) {
@@ -233,36 +239,83 @@ class OPNPaymentHandler {
   }
 
   async processPayment(paymentData) {
-    try {
-      const response = await fetch(srCheckoutParams.ajaxUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+    if (paymentData.payment_type === "card") {
+      return this.handleCardPayment(paymentData);
+    } else if (paymentData.payment_type === "promptpay") {
+      const sourceResult = await this.createPromptPaySource();
+
+      this.displayQRCode(sourceResult.data);
+      this.startPaymentStatusPolling(
+        sourceResult.data.id,
+        paymentData.order_id
+      );
+
+      return sourceResult;
+    }
+  }
+
+  async handleCardPayment(paymentData) {
+    return new Promise((resolve, reject) => {
+      OmiseCard.configure({
+        defaultPaymentMethod: "credit_card",
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        onCreateTokenSuccess: async (token) => {
+          try {
+            const response = await this.submitPayment({
+              action: "sr_process_payment",
+              nonce: srCheckoutParams.nonce,
+              ...paymentData,
+              // ...this.getFormData(),
+              card: token,
+            });
+
+            if (response.authorize_uri) {
+              // 3D Secure flow
+              window.location.href = response.authorize_uri;
+            } else {
+              // Standard flow
+              window.location.href = `/complete/?order_id=${paymentData.order_id}&status=success`;
+            }
+
+            resolve(response);
+          } catch (error) {
+            reject(error);
+          }
         },
-        body: new URLSearchParams({
-          action: "sr_process_payment",
-          nonce: srCheckoutParams.nonce,
-          ...paymentData,
-        }),
+        onError: (error) => {
+          reject(new Error(error.message));
+        },
+        onFormClosed: () => {
+          this.setSubmitting(false);
+          reject(new Error("Payment form closed"));
+        },
       });
 
-      const result = await response.json();
+      OmiseCard.open();
+    });
+  }
 
-      if (!result.success) {
-        throw new Error(result.data.message);
-      }
+  async submitPayment(formData) {
+    const response = await fetch(srCheckoutParams.ajaxUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        action: "sr_process_payment", // action для оплаты картой
+        nonce: srCheckoutParams.nonce,
+        ...formData,
+      }),
+    });
 
-      if (result.data.qr_code_uri) {
-        this.displayQRCode(result.data);
-        this.startPaymentStatusPolling(result.data.transactionId);
-      } else if (result.data.authorize_uri) {
-        window.location.href = result.data.authorize_uri;
-      } else {
-        this.handlePaymentSuccess(result.data);
-      }
-    } catch (error) {
-      this.handlePaymentError(error);
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.data.message);
     }
+
+    return this.handlePaymentResult(result.data);
   }
 
   setSubmitting(submitting) {
@@ -298,10 +351,41 @@ class OPNPaymentHandler {
     window.location.href = successUrl.toString();
   }
 
+  handlePaymentResult(data) {
+    if (data.qr_code_uri) {
+      this.displayQRCode(data);
+      this.startPaymentStatusPolling(data.transactionId);
+    } else if (data.authorize_uri) {
+      window.location.href = data.authorize_uri;
+    } else {
+      this.handlePaymentSuccess(data);
+    }
+  }
+
   handlePaymentError(error) {
     console.error("Ошибка обработки платежа:", error);
     this.setSubmitting(false);
     alert(error.message || "Произошла ошибка при обработке платежа");
+  }
+
+  getFormData() {
+    const phone = document
+      .getElementById("phone")
+      .value.replace(/\D/g, "")
+      .slice(-9);
+    const selectedPackage = document.querySelector(".sr-package.selected");
+
+    return {
+      first_name: document.getElementById("first_name").value,
+      last_name: document.getElementById("last_name").value,
+      email: document.getElementById("email").value,
+      phone: phone,
+      country: document.getElementById("country").value,
+      address: document.getElementById("address").value,
+      city: document.getElementById("city").value,
+      postal_code: document.getElementById("postal_code").value,
+      package_id: selectedPackage?.dataset.packageId,
+    };
   }
 }
 
