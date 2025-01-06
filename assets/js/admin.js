@@ -11,6 +11,59 @@ jQuery(document).ready(function($) {
         $('.live-mode-keys').toggleClass('hidden', isTestMode);
     }
 
+    function initMediaUploader(button) {
+        button.on('click', function(e) {
+            e.preventDefault();
+            
+            var button = $(this);
+            var uploader = wp.media({
+                title: 'Select Package Image',
+                library: { type: 'image' },
+                button: { text: 'Use this image' },
+                multiple: false
+            }).on('select', function() {
+                var selection = uploader.state().get('selection').first().toJSON();
+                var img = $('<img>').attr('src', selection.url);
+                button.parent().html(img);
+            }).open();
+        });
+    }
+
+    function showFieldError($field, message) {
+        const $error = $('<div class="error-message">')
+            .text(message)
+            .insertAfter($field);
+        
+        $field.addClass('error');
+        
+        // Remove error when field is changed
+        $field.one('input', function() {
+            $field.removeClass('error');
+            $error.remove();
+        });
+    }
+
+    function showNotice(message, type = 'success') {
+        const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
+        const $dismiss = $('<button type="button" class="notice-dismiss">');
+        
+        $notice.append($dismiss);
+        $('.wrap h1').after($notice);
+
+        $dismiss.on('click', function() {
+            $notice.fadeOut(200, function() {
+                $notice.remove();
+            });
+        });
+
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            $notice.fadeOut(200, function() {
+                $notice.remove();
+            });
+        }, 5000);
+    }
+
     // Copy to clipboard functionality for API keys
     $('.copy-key').on('click', function(e) {
         e.preventDefault();
@@ -67,21 +120,6 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Show field error message
-    function showFieldError($field, message) {
-        const $error = $('<div class="error-message">')
-            .text(message)
-            .insertAfter($field);
-        
-        $field.addClass('error');
-        
-        // Remove error when field is changed
-        $field.one('input', function() {
-            $field.removeClass('error');
-            $error.remove();
-        });
-    }
-
     // Test API connection
     $('#test-sr-connection').on('click', function(e) {
         e.preventDefault();
@@ -127,11 +165,6 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Initialize tooltips
-    $('.sr-tooltip').tooltip({
-        position: { my: 'left+5 center', at: 'right center' }
-    });
-
     // Save settings via AJAX
     $('#save-settings-ajax').on('click', function(e) {
         e.preventDefault();
@@ -170,25 +203,89 @@ jQuery(document).ready(function($) {
         });
     });
 
-    // Show admin notice
-    function showNotice(message, type = 'success') {
-        const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
-        const $dismiss = $('<button type="button" class="notice-dismiss">');
+    $('#add-new-package').on('click', function(e) {
+        e.preventDefault();
+        console.log('Add new clicked'); // Отладочный вывод
         
-        $notice.append($dismiss);
-        $('.wrap h1').after($notice);
-
-        $dismiss.on('click', function() {
-            $notice.fadeOut(200, function() {
-                $notice.remove();
-            });
+        var maxId = 0;
+        $('.wp-list-table tr[data-id]').each(function() {
+            var id = parseInt($(this).data('id'));
+            if (id > maxId) maxId = id;
         });
+        
+        var template = $('#package-row-template').html().replace('{{id}}', maxId + 1);
+        $('.wp-list-table tbody').append(template);
+        initMediaUploader($('.wp-list-table tr:last-child .upload-image'));
+    });
 
-        // Auto dismiss after 5 seconds
-        setTimeout(() => {
-            $notice.fadeOut(200, function() {
-                $notice.remove();
-            });
-        }, 5000);
-    }
+    $('.upload-image').each(function() {
+        initMediaUploader($(this));
+    });
+
+    $(document).on('click', '.save-package', function(e) {
+        e.preventDefault();
+        console.log('Save button clicked'); // Добавляем логирование
+        
+        var row = $(this).closest('tr');
+        var data = {
+            action: 'sr_save_package',
+            nonce: srPackageParams.nonce,
+            id: row.data('id'),
+            name: row.find('.package-name').val(),
+            units: row.find('.package-units').val(),
+            price: row.find('.package-price').val(),
+            discount: row.find('.package-discount').val(),
+            image: row.find('img').attr('src') || ''
+        };
+        
+        console.log('Data to send:', data); // Логируем отправляемые данные
+        
+        $.ajax({
+            url: window.ajaxurl, // Используем window.ajaxurl
+            type: 'POST',
+            data: data,
+            success: function(response) {
+                console.log('Response:', response); // Логируем ответ
+                if (response.success) {
+                    showNotice(srPackageParams.strings.saveSuccess, 'success');
+                } else {
+                    showNotice(srPackageParams.strings.saveFail, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ajax error:', error); // Логируем ошибки
+                showNotice('Error saving package: ' + error, 'error');
+            }
+        });
+    });
+
+    $('.delete-package').on('click', function(e) {
+        e.preventDefault();
+        var row = $(this).closest('tr');
+        
+        if (!confirm(srPackageParams.strings.confirmDelete)) {
+            return;
+        }
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'sr_delete_package',
+                nonce: srPackageParams.nonce,
+                id: row.data('id')
+            },
+            success: function(response) {
+                if (response.success) {
+                    row.fadeOut(300, function() { $(this).remove(); });
+                    showNotice(srPackageParams.strings.deleteSuccess, 'success');
+                } else {
+                    showNotice(srPackageParams.strings.deleteFail, 'error');
+                }
+            },
+            error: function() {
+                showNotice(srPackageParams.strings.deleteFail, 'error');
+            }
+        });
+    });
 });

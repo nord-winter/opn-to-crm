@@ -56,29 +56,29 @@ class OPN_API
                 'currency' => 'THB',
                 'platform_type' => 'WEB',
             ];
-    
+
             $source_response = $this->request('POST', '/sources', $source);
-            
+
             if (empty($source_response['id'])) {
                 throw new Exception('Failed to create source');
             }
-    
+
             $charge = $this->create_charge([
                 'amount' => $data['amount'],
                 'currency' => 'THB',
                 'source' => $source_response['id']
             ]);
-    
+
             if (empty($charge['source']['scannable_code']['image']['download_uri'])) {
                 throw new Exception('QR code not available');
             }
-    
+
             return wp_send_json_success([
                 'source' => $source_response,
                 'charge' => $charge,
-                'qr_code_uri' => $charge['source']['scannable_code']['image']['download_uri']
+                'qr_code_uri' => $charge['source']['scannable_code']['image']['download_uri'] // TODO: Неверный путь к QR коду
             ]);
-    
+
         } catch (Exception $e) {
             error_log('PromptPay error: ' . $e->getMessage());
             return wp_send_json_error(['message' => $e->getMessage()]);

@@ -218,6 +218,7 @@ class OPNPaymentHandler {
     } else if (paymentData.payment_type === "promptpay") {
       const sourceResult = await this.createPromptPaySource();
 
+      // TODO: проверить что приходит в sourceResult
       this.displayQRCode(sourceResult.data);
       this.startPaymentStatusPolling(
         sourceResult.data.id,
@@ -277,7 +278,7 @@ class OPNPaymentHandler {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        action: "sr_process_payment", // action для оплаты картой
+        action: "sr_process_payment",
         nonce: srCheckoutParams.nonce,
         ...formData,
       }),

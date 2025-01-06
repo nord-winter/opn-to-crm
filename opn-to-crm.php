@@ -75,6 +75,7 @@ class OPN_To_CRM
         // Admin Classes
         require_once OPN_TO_CRM_PLUGIN_DIR . 'includes/admin/class-sr-admin.php';
         require_once OPN_TO_CRM_PLUGIN_DIR . 'includes/admin/class-sr-settings.php';
+        require_once OPN_TO_CRM_PLUGIN_DIR . 'includes/admin/class-sr-package-admin.php';
 
         // Checkout Classes
         require_once OPN_TO_CRM_PLUGIN_DIR . 'includes/checkout/class-sr-checkout.php';
@@ -89,6 +90,10 @@ class OPN_To_CRM
         // Initialize admin
         if (is_admin()) {
             new SR_Admin();
+        }
+
+        if (is_admin()) {
+            new SR_Package_Admin();
         }
 
         // Initialize checkout
@@ -159,6 +164,11 @@ class OPN_To_CRM
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('sr_checkout_nonce')
         ));
+
+        $package_manager = new SR_Package_Admin();
+        $packages = $package_manager->get_packages();
+        wp_localize_script('opn-to-crm-checkout', 'srPackages', $packages);
+
     }
 
     /**

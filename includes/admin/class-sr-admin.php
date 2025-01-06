@@ -31,12 +31,12 @@ class SR_Admin {
      */
     public function add_menu_items() {
         add_menu_page(
-            __('OPN To CRM', 'opn-to-crm'),
-            __('OPN To CRM', 'opn-to-crm'),
+            __('General', 'opn-to-crm'),
+            __('OPN to CRM', 'opn-to-crm'),
             'manage_options',
             'opn-to-crm',
             array($this, 'render_settings_page'),
-            'dashicons-cart',
+            'dashicons-admin-generic',
             55
         );
     }

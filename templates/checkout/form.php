@@ -1,10 +1,15 @@
 <?php
-$packages = array(
-    array('id' => 4, 'name' => '4x', 'units' => 40, 'discount' => 15, 'price' => 3400),
-    array('id' => 3, 'name' => '3x', 'units' => 30, 'discount' => 10, 'price' => 2700),
-    array('id' => 2, 'name' => '2x', 'units' => 20, 'discount' => 5, 'price' => 1900),
-    array('id' => 1, 'name' => '1x', 'units' => 10, 'discount' => 0, 'price' => 1000),
-);
+
+// В form.php заменить хардкод на:
+$package_manager = new SR_Package_Admin();
+$packages = $package_manager->get_packages();
+
+// $packages = array(
+//     array('id' => 4, 'name' => '4x', 'units' => 40, 'discount' => 15, 'price' => 3400),
+//     array('id' => 3, 'name' => '3x', 'units' => 30, 'discount' => 10, 'price' => 2700),
+//     array('id' => 2, 'name' => '2x', 'units' => 20, 'discount' => 5, 'price' => 1900),
+//     array('id' => 1, 'name' => '1x', 'units' => 10, 'discount' => 0, 'price' => 1000),
+// );
 $opn_api = new OPN_API();
 $public_key = $opn_api->get_public_key();
 ?>
@@ -33,7 +38,7 @@ $public_key = $opn_api->get_public_key();
                     <?php
                     foreach ($packages as $package): ?>
                         <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>">
-                            <h3><?php echo sprintf(__('Package %s', 'opn-to-crm'), $package['name']); ?></h3>
+                            <h3><?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?></h3>
                             <div class="sr-package-details">
                                 <span class="sr-package-price">฿<?php echo number_format($package['price']); ?></span>
                                 <span class="sr-package-units"><?php echo $package['units']; ?> units</span>
