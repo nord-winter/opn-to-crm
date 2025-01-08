@@ -30,13 +30,21 @@ $public_key = $opn_api->get_public_key();
                     <?php
                     foreach ($packages as $package): ?>
                         <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>">
-                            <h3><?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?></h3>
-                            <div class="sr-package-details">
-                                <span class="sr-package-price">฿<?php echo number_format($package['price']); ?></span>
-                                <span class="sr-package-units"><?php echo $package['units']; ?> units</span>
-                                <?php if ($package['discount'] > 0): ?>
-                                    <span class="sr-package-discount">Save <?php echo $package['discount']; ?>%</span>
-                                <?php endif; ?>
+                            <?php if (!empty($package['image'])): ?>
+                                <div class="sr-package-image">
+                                    <img src="<?php echo esc_url($package['image']); ?>"
+                                        alt="<?php echo esc_attr($package['name']); ?>">
+                                </div>
+                            <?php endif; ?>
+                            <div class="sr-package-content">
+                                <h3><?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?></h3>
+                                <div class="sr-package-details">
+                                    <span class="sr-package-price">฿<?php echo number_format($package['price']); ?></span>
+                                    <span class="sr-package-units"><?php echo $package['units']; ?> units</span>
+                                    <?php if ($package['discount'] > 0): ?>
+                                        <span class="sr-package-discount">Save <?php echo $package['discount']; ?>%</span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -147,7 +155,7 @@ $public_key = $opn_api->get_public_key();
                     <span><?php _e('Total', 'opn-to-crm'); ?></span>
                     <span id="summary-total">฿0</span>
                 </div>
-                <button type="button" class="sr-submit-button" id="sr-submit" >
+                <button type="button" class="sr-submit-button" id="sr-submit">
                     <span class="sr-button-text"><?php _e('Complete Order', 'opn-to-crm'); ?></span>
                     <span class="sr-button-loading" style="display: none;">
                         <span class="sr-spinner"></span>

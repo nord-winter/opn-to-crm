@@ -3,7 +3,7 @@
  * Plugin Name: OPN To CRM
  * Description: Integration with OPN Payments and SalesRender CRM
  * Version: 1.0.0
- * Author: Your Name
+ * Author: Vladislav Simutin
  */
 
 if (!defined('ABSPATH')) {
