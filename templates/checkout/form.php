@@ -36,13 +36,23 @@ $public_key = $opn_api->get_public_key();
                                         alt="<?php echo esc_attr($package['name']); ?>">
                                 </div>
                             <?php endif; ?>
+
                             <div class="sr-package-content">
-                                <h3><?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?></h3>
-                                <div class="sr-package-details">
-                                    <span class="sr-package-price">฿<?php echo number_format($package['price']); ?></span>
-                                    <span class="sr-package-units"><?php echo $package['units']; ?> units</span>
+                                <div class="sr-package-info">
+                                    <div class="sr-package-name">
+                                        <?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?></div>
+                                    <div class="sr-package-units"><?php echo $package['units']; ?> units</div>
+                                </div>
+
+                                <div class="sr-package-price-container">
                                     <?php if ($package['discount'] > 0): ?>
-                                        <span class="sr-package-discount">Save <?php echo $package['discount']; ?>%</span>
+                                        <div class="sr-package-original-price">
+                                            ฿<?php echo number_format($package['price'] / (1 - $package['discount'] / 100)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="sr-package-price">฿<?php echo number_format($package['price']); ?></div>
+                                    <?php if ($package['discount'] > 0): ?>
+                                        <div class="sr-package-discount">Save <?php echo $package['discount']; ?>%</div>
                                     <?php endif; ?>
                                 </div>
                             </div>
