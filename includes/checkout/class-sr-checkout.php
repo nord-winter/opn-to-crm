@@ -57,7 +57,7 @@ class SR_Checkout
             $order_data = $this->validate_checkout_data($_POST);
             $sr_order_data = $this->sr_api->format_order_data($order_data);
             $sr_response = $this->sr_api->create_order($sr_order_data);
-
+            
             if (is_wp_error($sr_response)) {
                 throw new Exception($sr_response->get_error_message());
             }
@@ -105,14 +105,14 @@ class SR_Checkout
             throw new Exception('Invalid email address');
         }
 
-        // Валидация телефона (9 цифр)
         $phone = preg_replace('/[^0-9]/', '', $validated['phone']);
         if (strlen($phone) !== 9) {
             throw new Exception('Invalid phone number format' . $phone);
         }
-        $validated['phone'] = '+66' . $phone;
 
-        // Валидация почтового индекса (5 цифр)
+        $phone = preg_replace('/^(?:66|0)/', '', $phone);
+        $validated['phone'] = '0' . $phone;
+
         if (!preg_match('/^\d{5}$/', $validated['postal_code'])) {
             throw new Exception('Invalid postal code format');
         }
@@ -133,7 +133,7 @@ class SR_Checkout
     {
         ob_start();
 
-        // Load form template
+
         include OPN_TO_CRM_PLUGIN_DIR . 'templates/checkout/form.php';
 
         return ob_get_clean();

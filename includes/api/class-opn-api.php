@@ -31,7 +31,7 @@ class OPN_API
         try {
             $response = $this->request('POST', $endpoint, $data);
 
-            error_log('OPN API Response: ' . print_r($response, true));
+            //error_log('OPN API Response: ' . print_r($response, true));
 
             return $response;
 
@@ -160,9 +160,9 @@ class OPN_API
     }
 
     /**
-     * Проверка статуса источника платежа
+     * Check source by ID
      * 
-     * @param string $source_id ID источника платежа
+     * @param string $source_id
      * @return array|WP_Error
      */
     public function check_source($source_id)

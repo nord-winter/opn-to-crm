@@ -269,6 +269,10 @@ textarea:focus {
     cursor: not-allowed;
 }
 
+.sr-button-loading {
+    align-items: center;
+}
+
 /* Error States */
 .sr-error {
     color: #DC2626;
@@ -296,6 +300,7 @@ textarea.error {
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    margin-right: 5px;
 }
 
 .sr-qr-wrapper {
@@ -317,6 +322,119 @@ textarea.error {
 .sr-qr-instructions p {
     margin: 10px 0;
     font-size: 14px;
+}
+
+.sr-qr-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.sr-qr-modal-content {
+    background: white;
+    padding: 32px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    position: relative;
+    text-align: center;
+}
+
+.sr-qr-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.sr-qr-image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.sr-qr-image {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    object-fit: contain;
+}
+
+.sr-qr-download-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    margin-top: -40px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sr-qr-download {
+    background: white;
+    padding: 8px;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    max-width: 30px;
+    max-height: 30px;
+}
+
+.sr-qr-download:hover {
+    transform: scale(1.1);
+}
+
+.sr-qr-amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #22C55E;
+}
+
+.sr-qr-instructions {
+    text-align: center;
+}
+
+.sr-qr-instructions p {
+    margin: 8px 0;
+    color: #4B5563;
+}
+
+.sr-qr-timer {
+    margin-top: 12px;
+    color: #22C55E;
+    font-weight: 600;
+}
+
+.sr-qr-status {
+    background: #F0FDF4;
+    padding: 8px 16px;
+    border-radius: 4px;
+    color: #22C55E;
+}
+
+.sr-qr-close {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #9CA3AF;
+}
+
+.sr-qr-close:hover {
+    color: #4B5563;
 }
 
 @keyframes spin {

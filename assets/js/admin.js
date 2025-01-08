@@ -35,8 +35,6 @@ jQuery(document).ready(function($) {
             .insertAfter($field);
         
         $field.addClass('error');
-        
-        // Remove error when field is changed
         $field.one('input', function() {
             $field.removeClass('error');
             $error.remove();
@@ -56,7 +54,6 @@ jQuery(document).ready(function($) {
             });
         });
 
-        // Auto dismiss after 5 seconds
         setTimeout(() => {
             $notice.fadeOut(200, function() {
                 $notice.remove();
@@ -138,13 +135,13 @@ jQuery(document).ready(function($) {
 
         $.post(ajaxurl, data, function(response) {
             if (response.success) {
-                alert('Connection successful!');
+                console.log('Connection successful!');
             } else {
-                alert('Connection failed: ' + response.data.message);
+                console.log('Connection failed: ' + response.data.message);
             }
         })
         .fail(function() {
-            alert('Connection test failed. Please check your settings.');
+            console.log('Connection test failed. Please check your settings.');
         })
         .always(function() {
             $button.prop('disabled', false).text(originalText);
@@ -205,7 +202,7 @@ jQuery(document).ready(function($) {
 
     $('#add-new-package').on('click', function(e) {
         e.preventDefault();
-        console.log('Add new clicked'); // Отладочный вывод
+        console.log('Add new clicked');
         
         var maxId = 0;
         $('.wp-list-table tr[data-id]').each(function() {
@@ -224,7 +221,7 @@ jQuery(document).ready(function($) {
 
     $(document).on('click', '.save-package', function(e) {
         e.preventDefault();
-        console.log('Save button clicked'); // Добавляем логирование
+        console.log('Save button clicked');
         
         var row = $(this).closest('tr');
         var data = {
@@ -238,14 +235,14 @@ jQuery(document).ready(function($) {
             image: row.find('img').attr('src') || ''
         };
         
-        console.log('Data to send:', data); // Логируем отправляемые данные
+        console.log('Data to send:', data); 
         
         $.ajax({
-            url: window.ajaxurl, // Используем window.ajaxurl
+            url: window.ajaxurl, 
             type: 'POST',
             data: data,
             success: function(response) {
-                console.log('Response:', response); // Логируем ответ
+                console.log('Response:', response);
                 if (response.success) {
                     showNotice(srPackageParams.strings.saveSuccess, 'success');
                 } else {
@@ -253,7 +250,7 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Ajax error:', error); // Логируем ошибки
+                console.error('Ajax error:', error);
                 showNotice('Error saving package: ' + error, 'error');
             }
         });

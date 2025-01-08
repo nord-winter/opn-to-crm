@@ -41,27 +41,19 @@ class SR_Payment
     }
 
     /**
-     * Обработчик AJAX для процесса оплаты
+     * Ajax handler for creating a source (e.g., credit card)
      */
     public function ajax_process_payment()
     {
-        error_log('POST data: ' . print_r($_POST, true));
+        //error_log('POST data: ' . print_r($_POST, true));
         try {
             if (!wp_verify_nonce($_POST['nonce'], 'sr_checkout_nonce')) {
                 throw new Exception('Invalid nonce');
             }
+            
             error_log('Payment data: ' . print_r($_POST, true));
 
-            // Создаем заказ в CRM
-            $sr_api = new SR_API();
-            $order_data = $this->prepare_order_data($_POST);
-            $order_result = $sr_api->create_order($order_data);
-
-            if (is_wp_error($order_result)) {
-                throw new Exception($order_result->get_error_message());
-            }
-
-            $order_id = $order_result['orderMutation']['addOrder']['id'];
+            $order_id = absint($_POST['order_id']);
             $amount = absint($_POST['amount']);
             $payment_type = sanitize_text_field($_POST['payment_type']);
             $return_uri = home_url('/complete/');
@@ -111,7 +103,7 @@ class SR_Payment
     {
         $phone = preg_replace('/[^0-9]/', '', $post_data['phone']);
         if (strlen($phone) > 9) {
-            $phone = substr($phone, -9); // Берем последние 9 цифр
+            $phone = substr($phone, -9);
         }
         $phone = '0' . $phone;
 
@@ -198,7 +190,7 @@ class SR_Payment
         $charge_data = array(
             'amount' => $data['amount'],
             'currency' => $data['currency'],
-            'card' => $data['token'], // Было source
+            'card' => $data['token'],
             'customer' => $data['customer'],
             'return_uri' => $data['return_uri'],
             'metadata' => array(
@@ -232,7 +224,6 @@ class SR_Payment
 
     private function process_promptpay_payment($data)
     {
-        // Создаем source
         $source_data = array(
             'type' => 'promptpay',
             'amount' => $data['amount'],
@@ -245,7 +236,6 @@ class SR_Payment
             return $source;
         }
 
-        // Создаем charge
         $charge_data = array(
             'amount' => $data['amount'],
             'currency' => $data['currency'],
@@ -400,7 +390,9 @@ class SR_Payment
     }
 
     /**
-     * Создание PromptPay QR-кода
+     * Create  PromptPay QR-Code
+     * 
+     * @param array $data Event data
      */
     public function ajax_create_promptpay_source() {
         try {
@@ -437,7 +429,7 @@ class SR_Payment
         }
     }
     /**
-     * Проверка статуса платежа
+     * Check payment status AJAX handler
      */
     public function ajax_check_payment_status() {
         try {
@@ -445,7 +437,12 @@ class SR_Payment
             
             $source_id = sanitize_text_field($_POST['source_id'] ?? '');
             if (!$source_id) {
-                throw new Exception('Invalid source ID');
+                wp_send_json_success([
+                    'paid' => false,
+                    'expired' => false,
+                    'status' => 'pending'
+                ]);
+                return;
             }
     
             $result = $this->opn_api->check_source($source_id);
@@ -458,7 +455,13 @@ class SR_Payment
             ]);
     
         } catch (Exception $e) {
-            wp_send_json_error(['message' => $e->getMessage()]);
+            error_log('Payment status check error: ' . $e->getMessage());
+
+            wp_send_json_success([
+                'paid' => false,
+                'expired' => false,
+                'status' => 'pending'
+            ]);
         }
     }
 

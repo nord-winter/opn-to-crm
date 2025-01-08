@@ -89,7 +89,7 @@ class SR_Package_Admin
         );
 
         wp_localize_script('opn-to-crm-admin', 'srPackageParams', array(
-            'ajaxurl' => admin_url('admin-ajax.php'), // Добавляем ajaxurl
+            'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('sr_package_nonce'),
             'strings' => array(
                 'confirmDelete' => __('Are you sure you want to delete this package?', 'opn-to-crm'),
@@ -109,12 +109,11 @@ class SR_Package_Admin
     }
 
     /**
-     * AJAX handler для сохранения пакета
+     * AJAX handler for saving package data
      */
     public function ajax_save_package()
     {
         error_log('Save package request: ' . print_r($_POST, true));
-        // Проверяем nonce и права доступа
         check_ajax_referer('sr_package_nonce', 'nonce');
         if (!current_user_can('manage_options')) {
             wp_send_json_error('Permission denied');
@@ -150,11 +149,10 @@ class SR_Package_Admin
     }
 
     /**
-     * AJAX handler для удаления пакета
+     * AJAX handler for deleting a package
      */
     public function ajax_delete_package()
     {
-        // Проверяем nonce и права доступа
         check_ajax_referer('sr_package_nonce', 'nonce');
         if (!current_user_can('manage_options')) {
             wp_send_json_error('Permission denied');
@@ -167,7 +165,7 @@ class SR_Package_Admin
             return $package['id'] !== $package_id;
         });
 
-        // Переиндексируем массив
+
         $packages = array_values($packages);
 
         update_option('sr_packages', $packages);

@@ -1,22 +1,14 @@
 <?php
 
-// В form.php заменить хардкод на:
 $package_manager = new SR_Package_Admin();
 $packages = $package_manager->get_packages();
 
-// $packages = array(
-//     array('id' => 4, 'name' => '4x', 'units' => 40, 'discount' => 15, 'price' => 3400),
-//     array('id' => 3, 'name' => '3x', 'units' => 30, 'discount' => 10, 'price' => 2700),
-//     array('id' => 2, 'name' => '2x', 'units' => 20, 'discount' => 5, 'price' => 1900),
-//     array('id' => 1, 'name' => '1x', 'units' => 10, 'discount' => 0, 'price' => 1000),
-// );
 $opn_api = new OPN_API();
 $public_key = $opn_api->get_public_key();
 ?>
 
 <script>
     const opnPublicKey = '<?php echo esc_js($public_key); ?>';
-    // Добавляем данные о пакетах из PHP в JavaScript
     const packagesData = <?php echo json_encode($packages); ?>;
 </script>
 
@@ -130,7 +122,7 @@ $public_key = $opn_api->get_public_key();
                     </div>
                 </div>
 
-                <!-- Контейнер для QR-кода PromptPay -->
+
                 <div id="promptpay-form" class="sr-payment-form sr-promptpay-form" style="display: none;">
                     <div id="promptpay-qr" class="sr-qr-container"></div>
                 </div>
@@ -155,7 +147,7 @@ $public_key = $opn_api->get_public_key();
                     <span><?php _e('Total', 'opn-to-crm'); ?></span>
                     <span id="summary-total">฿0</span>
                 </div>
-                <button type="button" class="sr-submit-button" id="sr-submit">
+                <button type="button" class="sr-submit-button" id="sr-submit" >
                     <span class="sr-button-text"><?php _e('Complete Order', 'opn-to-crm'); ?></span>
                     <span class="sr-button-loading" style="display: none;">
                         <span class="sr-spinner"></span>

@@ -17,7 +17,7 @@ class OPNPaymentHandler {
 
   initialize() {
     if (!this.validateElements()) {
-      console.error("Не найдены необходимые элементы формы");
+      console.error("No elements found");
       return;
     }
 
@@ -37,7 +37,7 @@ class OPNPaymentHandler {
   initializeOPN() {
     try {
       if (typeof OmiseCard === "undefined") {
-        throw new Error("OPN.js не загружен");
+        throw new Error("OPN.js not found");
       }
 
       OmiseCard.configure({
@@ -48,7 +48,7 @@ class OPNPaymentHandler {
         currency: "THB",
       });
     } catch (error) {
-      console.error("Ошибка при инициализации OPN:", error);
+      console.error("Error initializing OPN:", error);
     }
   }
 
@@ -129,9 +129,20 @@ class OPNPaymentHandler {
         <div class="sr-qr-modal-content">
             <span class="sr-qr-close">&times;</span>
             <div class="sr-qr-wrapper">
-                <img src="${
-                  sourceData.qr_code_uri
-                }" alt="PromptPay QR Code" class="sr-qr-image">
+                <div class="sr-qr-image-container">
+                    <img src="${
+                      sourceData.qr_code_uri
+                    }" alt="PromptPay QR Code" class="sr-qr-image">
+                    <a href="${
+                      sourceData.qr_code_uri
+                    }" download="promptpay-qr.png" class="sr-qr-download">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </a>
+                </div>
                 <div class="sr-qr-amount">฿${(
                   sourceData.charge.amount / 100
                 ).toFixed(2)}</div>
@@ -139,17 +150,36 @@ class OPNPaymentHandler {
                     <p>1. Open your banking app</p>
                     <p>2. Scan this QR code</p>
                     <p>3. Confirm payment in your app</p>
+                    <div class="sr-qr-timer">Payment window: <span>5:00</span></div>
                 </div>
+                <div class="sr-qr-status">Waiting for payment...</div>
             </div>
         </div>
     `;
-
     document.body.appendChild(modal);
 
     const closeBtn = modal.querySelector(".sr-qr-close");
     closeBtn.onclick = () => modal.remove();
 
-    this.startPaymentStatusPolling(sourceData.source.id);
+    let timeLeft = 300;
+    const timerSpan = modal.querySelector(".sr-qr-timer span");
+    const timer = setInterval(() => {
+      timeLeft--;
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      timerSpan.textContent = `${minutes}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        modal.remove();
+      }
+    }, 1000);
+
+    setTimeout(() => {
+      this.startPaymentStatusPolling(sourceData.source.id);
+    }, 30000); 
   }
 
   startPaymentStatusPolling(sourceId) {
@@ -174,7 +204,13 @@ class OPNPaymentHandler {
         const response = await result.json();
 
         if (!response.success) {
-          throw new Error(response.data.message);
+          console.error("Status check error:", response.data.message);
+          return;
+        }
+
+        const statusElement = document.querySelector(".sr-qr-status");
+        if (statusElement) {
+          statusElement.textContent = `Status: ${response.data.status}`;
         }
 
         if (response.data.paid) {
@@ -182,11 +218,11 @@ class OPNPaymentHandler {
           window.location.href = "/complete/?status=success";
         } else if (response.data.expired || attempts >= maxAttempts) {
           clearInterval(poll);
-          this.handlePaymentError(new Error("Payment timeout"));
+          alert("Payment time expired. Please try again.");
+          window.location.reload();
         }
       } catch (error) {
-        clearInterval(poll);
-        this.handlePaymentError(error);
+        console.error("Status check error:", error);
       }
     }, pollInterval);
   }
@@ -206,7 +242,7 @@ class OPNPaymentHandler {
 
     const result = await response.json();
     if (!result.success) {
-      throw new Error(result.data.message || "Ошибка проверки статуса платежа");
+      throw new Error(result.data.message || "Error checking payment status");
     }
 
     return result.data;
@@ -218,7 +254,6 @@ class OPNPaymentHandler {
     } else if (paymentData.payment_type === "promptpay") {
       const sourceResult = await this.createPromptPaySource();
 
-      // TODO: проверить что приходит в sourceResult
       this.displayQRCode(sourceResult.data);
       this.startPaymentStatusPolling(
         sourceResult.data.id,
@@ -241,7 +276,6 @@ class OPNPaymentHandler {
               action: "sr_process_payment",
               nonce: srCheckoutParams.nonce,
               ...paymentData,
-              // ...this.getFormData(),
               card: token,
             });
 
@@ -328,7 +362,7 @@ class OPNPaymentHandler {
 
   handlePaymentResult(data) {
     if (data.qr_code_uri) {
-      this.displayQRCode(data); 
+      this.displayQRCode(data);
       this.startPaymentStatusPolling(data.transactionId);
     } else if (data.authorize_uri) {
       window.location.href = data.authorize_uri;
@@ -338,9 +372,9 @@ class OPNPaymentHandler {
   }
 
   handlePaymentError(error) {
-    console.error("Ошибка обработки платежа:", error);
+    console.error("Payment processing error:", error);
     this.setSubmitting(false);
-    alert(error.message || "Произошла ошибка при обработке платежа");
+    console.log(error.message || "An error occurred during payment processing");
   }
 
   getFormData() {
@@ -354,7 +388,7 @@ class OPNPaymentHandler {
       first_name: document.getElementById("first_name").value,
       last_name: document.getElementById("last_name").value,
       email: document.getElementById("email").value,
-      phone: phone,
+      phone: phone.replace(/^(?:\+66|66|0)/, '0'),
       country: document.getElementById("country").value,
       address: document.getElementById("address").value,
       city: document.getElementById("city").value,

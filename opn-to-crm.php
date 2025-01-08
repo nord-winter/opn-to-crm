@@ -172,7 +172,7 @@ class OPN_To_CRM
     }
 
     /**
-     * Получение публичного ключа OPN Payments
+     * Obtaining OPN Payments public key
      *
      * @return string
      */
