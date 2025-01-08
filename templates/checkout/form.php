@@ -29,7 +29,11 @@ $public_key = $opn_api->get_public_key();
                 <div class="sr-package-grid">
                     <?php
                     foreach ($packages as $package): ?>
-                        <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>">
+                        <div class="sr-package" 
+                            data-package-id="<?php echo esc_attr($package['id']); ?>"
+                            data-units="<?php echo esc_attr($package['units']); ?>"
+                            data-discount="<?php echo esc_attr($package['discount']); ?>"
+                            data-price="<?php echo esc_attr($package['price']); ?>">
                             <?php if (!empty($package['image'])): ?>
                                 <div class="sr-package-image">
                                     <img src="<?php echo esc_url($package['image']); ?>"
@@ -40,7 +44,8 @@ $public_key = $opn_api->get_public_key();
                             <div class="sr-package-content">
                                 <div class="sr-package-info">
                                     <div class="sr-package-name">
-                                        <?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?></div>
+                                        <?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?>
+                                    </div>
                                     <div class="sr-package-units"><?php echo $package['units']; ?> units</div>
                                 </div>
 

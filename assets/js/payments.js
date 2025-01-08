@@ -337,16 +337,10 @@ class OPNPaymentHandler {
   getAmount() {
     const selectedPackage = document.querySelector(".sr-package.selected");
     if (!selectedPackage) return 0;
-
-    const packageId = selectedPackage.dataset.packageId;
-    const packages = {
-      1: 100000,
-      2: 190000,
-      3: 270000,
-      4: 340000,
-    };
-
-    return packages[packageId] || 0;
+    
+    const packagePrice = parseFloat(selectedPackage.querySelector('.sr-package-price').textContent.replace(/[^0-9]/g, ''));
+    
+    return packagePrice * 100;
   }
 
   handlePaymentSuccess(data) {

@@ -133,12 +133,19 @@ class CheckoutHandler {
         if (!this.selectedPackage) {
             return;
         }
-
-        this.summary.package.textContent = `Package ${this.selectedPackage.units / 10}x`;
-        this.summary.units.textContent = `${this.selectedPackage.units} units`;
-        this.summary.discount.textContent = 
-            this.selectedPackage.discount > 0 ? `${this.selectedPackage.discount}%` : '-';
-        this.summary.total.textContent = `฿${this.selectedPackage.price.toLocaleString()}`;
+    
+        // Получаем актуальные данные из выбранного пакета
+        const selectedElement = document.querySelector(".sr-package.selected");
+        const packageName = selectedElement.querySelector('.sr-package-name').textContent;
+        const units = selectedElement.querySelector('.sr-package-units').textContent;
+        const discount = selectedElement.dataset.discount || '0';
+        const price = selectedElement.querySelector('.sr-package-price').textContent;
+    
+        // Обновляем элементы summary
+        this.summary.package.textContent = packageName;
+        this.summary.units.textContent = units;
+        this.summary.discount.textContent = discount > 0 ? `${discount}%` : '-';
+        this.summary.total.textContent = price;
     }
 
     /**
