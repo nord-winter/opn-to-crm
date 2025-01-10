@@ -29,8 +29,7 @@ $public_key = $opn_api->get_public_key();
                 <div class="sr-package-grid">
                     <?php
                     foreach ($packages as $package): ?>
-                        <div class="sr-package" 
-                            data-package-id="<?php echo esc_attr($package['id']); ?>"
+                        <div class="sr-package" data-package-id="<?php echo esc_attr($package['id']); ?>"
                             data-units="<?php echo esc_attr($package['units']); ?>"
                             data-discount="<?php echo esc_attr($package['discount']); ?>"
                             data-price="<?php echo esc_attr($package['price']); ?>">
@@ -46,18 +45,21 @@ $public_key = $opn_api->get_public_key();
                                     <div class="sr-package-name">
                                         <?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?>
                                     </div>
-                                    <div class="sr-package-units"><?php echo $package['units']; ?> units</div>
+                                    <div class="sr-package-units"><b><?php echo $package['units']; ?></b> box</div>
                                 </div>
 
                                 <div class="sr-package-price-container">
-                                    <?php if ($package['discount'] > 0): ?>
-                                        <div class="sr-package-original-price">
-                                            ฿<?php echo number_format($package['price'] / (1 - $package['discount'] / 100)); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    <div class="sr-package-price">฿<?php echo number_format($package['price']); ?></div>
+                                    <div class="sr-package-price-row">
+                                        <div class="sr-package-price">฿<?php echo number_format($package['price']); ?></div>
+                                        <?php if ($package['discount'] > 0): ?>
+                                            <div class="sr-package-original-price">
+                                                ฿<?php echo number_format($package['price'] / (1 - $package['discount'] / 100)); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php if ($package['discount'] > 0): ?>
                                         <div class="sr-package-discount">Save <?php echo $package['discount']; ?>%</div>
+                                        <div class="sr-package-delivery">Free delivery</div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -92,35 +94,37 @@ $public_key = $opn_api->get_public_key();
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Right Column -->
-        <div class="sr-checkout-right">
             <!-- Shipping Information -->
             <div class="sr-section">
                 <h2 class="sr-section-title"><?php _e('Shipping Information', 'opn-to-crm'); ?></h2>
                 <div class="sr-form-stack">
-                    <div class="sr-form-field">
-                        <label for="country"><?php _e('Country', 'opn-to-crm'); ?></label>
-                        <select id="country" name="country" disabled>
-                            <option value="TH" selected>Thailand</option>
-                        </select>
+                    <div class="sr-form-row">
+                        <div class="sr-form-field">
+                            <label for="city"><?php _e('City', 'opn-to-crm'); ?> *</label>
+                            <input type="text" id="city" name="city" required>
+                        </div>
+                        <div class="sr-form-field">
+                            <label for="postal_code"><?php _e('Postal Code', 'opn-to-crm'); ?> *</label>
+                            <input type="text" id="postal_code" name="postal_code" maxlength="5" required>
+                        </div>
                     </div>
                     <div class="sr-form-field">
                         <label for="address"><?php _e('Address', 'opn-to-crm'); ?> *</label>
                         <textarea id="address" name="address" required></textarea>
                     </div>
-                    <div class="sr-form-field">
-                        <label for="city"><?php _e('City', 'opn-to-crm'); ?> *</label>
-                        <input type="text" id="city" name="city" required>
-                    </div>
-                    <div class="sr-form-field">
-                        <label for="postal_code"><?php _e('Postal Code', 'opn-to-crm'); ?> *</label>
-                        <input type="text" id="postal_code" name="postal_code" maxlength="5" required>
+                    <div class="sr-form-field" style="display: none;">
+                        <label for="country"><?php _e('Country', 'opn-to-crm'); ?></label>
+                        <select id="country" name="country" disabled>
+                            <option value="TH" selected>Thailand</option>
+                        </select>
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Right Column -->
+        <div class="sr-checkout-right">
             <!-- Payment Method -->
             <div class="sr-section">
                 <h2 class="sr-section-title"><?php _e('Payment Method', 'opn-to-crm'); ?></h2>

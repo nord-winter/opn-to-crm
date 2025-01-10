@@ -30,7 +30,7 @@
     border: 1px solid #E5E7EB;
     border-radius: 8px;
     padding: 24px;
-    margin-bottom: 24px;
+    margin-bottom: 15px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -76,7 +76,7 @@
 .sr-package.selected::after {
     content: '✓';
     position: absolute;
-    top: 12px;
+    top: 0;
     right: 12px;
     color: #22C55E;
     font-size: 18px;
@@ -84,8 +84,8 @@
 }
 
 .sr-package-image {
-    width: 100px;
-    max-width: 30%;
+    width: 150px;
+    max-width: 45%;
     flex-shrink: 0;
 }
 
@@ -98,6 +98,26 @@
 
 .sr-package-content {
     flex: 1;
+}
+
+.sr-package-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sr-package-price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sr-package-price-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .sr-package-details {
@@ -114,7 +134,11 @@
 
 .sr-package-units {
     color: #6B7280;
-    font-size: 14px;
+    font-size: 16px;
+}
+
+.sr-package-units b{
+    font-size: 1.2em;
 }
 
 .sr-package-price {
@@ -133,25 +157,39 @@
     color: #22C55E;
     font-weight: 500;
     font-size: 14px;
+    display: none;
+}
+
+.sr-package-delivery {
+    color: #C73126;
+    font-weight: 500;
+    font-size: 14px;
 }
 
 /* Form Fields */
 .sr-form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 10px;
 }
 
 .sr-form-stack {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
+}
+
+.sr-form-row {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
 }
 
 .sr-form-field {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
 }
 
 label {
@@ -165,7 +203,7 @@ input[type="email"],
 input[type="tel"],
 select,
 textarea {
-    height: 48px;
+    height: 35px;
     padding: 8px 12px;
     border: 1px solid #E5E7EB;
     border-radius: 4px;
@@ -175,14 +213,18 @@ textarea {
 
 /* Payment Methods */
 .sr-payment-methods {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
+    display: flex;
+    flex-direction: row;
+    align-content: space-around;
+    justify-content: space-around;
+    align-items: center;
 }
 
 .sr-payment-method {
     position: relative;
+    margin: 10px;
+    width: 100%;
+    min-height: 105px;
 }
 
 .sr-payment-method input[type="radio"] {
@@ -196,14 +238,15 @@ textarea {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 12px;
-    padding: 16px;
+    padding: 5px;
     border: 2px solid #E5E7EB;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     height: 100%;
-    min-height: 60px;
+    min-height: 105px;
 }
 
 .sr-payment-method input[type="radio"]:checked + label {
@@ -251,81 +294,12 @@ textarea {
     margin-top: 24px;
 }
 
-/* Mobile Styles */
-@media (max-width: 768px) {
-    .sr-checkout-container {
-        padding: 16px;
-    }
 
-    .sr-checkout-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .sr-package-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .sr-package {
-        flex-direction: row;
-        padding: 16px;
-        align-items: center;
-    }
-
-    .sr-package-image {
-        width: 80px;
-        margin-right: 16px;
-    }
-
-    .sr-package-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-    }
-
-    .sr-package-info {
-        flex: 1;
-    }
-
-    .sr-package-name {
-        font-size: 16px;
-        margin-bottom: 2px;
-    }
-
-    .sr-package-units {
-        font-size: 12px;
-    }
-
-    .sr-package-price-container {
-        text-align: right;
-    }
-
-    .sr-package-price {
-        font-size: 20px;
-    }
-
-    .sr-package-original-price {
-        font-size: 12px;
-    }
-
-    .sr-form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .sr-payment-methods {
-        grid-template-columns: 1fr;
-    }
-
-    .sr-order-summary {
-        position: static;
-        margin-top: 24px;
-    }
-}
 
 /* QR Code Modal Styles */
 .sr-qr-wrapper {
     text-align: center;
-    padding: 20px;
+    padding: 10px;
 }
 
 .sr-qr-image {
@@ -468,33 +442,7 @@ textarea:focus {
     color: #DC2626;
 }
 
-/* Additional Mobile Optimizations */
-@media (max-width: 768px) {
-    .sr-package-grid {
-        gap: 12px;
-    }
-    
-    .sr-form-field {
-        margin-bottom: 16px;
-    }
-    
-    .sr-phone-input {
-        flex-direction: row;
-    }
-    
-    .sr-payment-method label {
-        padding: 12px;
-    }
-    
-    .sr-section {
-        padding: 16px;
-    }
-    
-    .sr-section-title {
-        font-size: 18px;
-        margin-bottom: 16px;
-    }
-}
+
 
 /* Modal Base Styles */
 .sr-qr-modal {
@@ -519,13 +467,15 @@ textarea:focus {
     position: relative;
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
 }
 
 .sr-qr-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 5px;
 }
 
 .sr-qr-image-container {
@@ -533,6 +483,9 @@ textarea:focus {
     width: 100%;
     max-width: 300px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .sr-qr-image {
@@ -570,16 +523,16 @@ textarea:focus {
     font-size: 24px;
     font-weight: 600;
     color: #22C55E;
-    margin: 16px 0;
+    margin: 5px 0;
 }
 
 .sr-qr-instructions {
     text-align: center;
-    margin: 20px 0;
+    margin: 5px 0;
 }
 
 .sr-qr-instructions p {
-    margin: 8px 0;
+    margin: 5px 0;
     color: #4B5563;
     font-size: 14px;
     line-height: 1.5;
@@ -591,7 +544,7 @@ textarea:focus {
     border-radius: 4px;
     color: #22C55E;
     font-weight: 500;
-    margin: 12px 0;
+    margin: 5px 0;
     display: inline-block;
 }
 
@@ -600,7 +553,7 @@ textarea:focus {
 }
 
 .sr-qr-status {
-    margin-top: 16px;
+    margin-top: 5px;
     padding: 12px 20px;
     border-radius: 4px;
     background: #F0FDF4;
@@ -609,7 +562,6 @@ textarea:focus {
 }
 
 .sr-qr-close {
-    position: absolute;
     right: 16px;
     top: 16px;
     width: 24px;
@@ -625,6 +577,7 @@ textarea:focus {
     color: #6B7280;
     font-size: 18px;
     line-height: 1;
+    align-self: flex-end;
 }
 
 .sr-qr-close:hover {
@@ -648,32 +601,6 @@ textarea:focus {
     color: #DC2626;
 }
 
-/* Mobile Optimizations for Modal */
-@media (max-width: 768px) {
-    .sr-qr-modal-content {
-        padding: 24px 16px;
-        margin: 16px;
-        width: calc(100% - 32px);
-    }
-
-    .sr-qr-amount {
-        font-size: 20px;
-    }
-
-    .sr-qr-instructions p {
-        font-size: 13px;
-    }
-
-    .sr-qr-download {
-        width: 32px;
-        height: 32px;
-    }
-
-    .sr-qr-close {
-        right: 12px;
-        top: 12px;
-    }
-}
 
 /* Transitions and Animations */
 .sr-qr-modal {
@@ -700,4 +627,127 @@ textarea:focus {
 /* Prevent Body Scroll When Modal is Open */
 body.sr-modal-open {
     overflow: hidden;
+}
+
+
+/* Additional Mobile Optimizations */
+@media (max-width: 768px) {
+    .sr-package-grid {
+        gap: 12px;
+    }
+    
+    .sr-form-field {
+        margin-bottom: 16px;
+    }
+    
+    .sr-phone-input {
+        flex-direction: row;
+    }
+    
+    .sr-payment-method label {
+        padding: 5px;
+    }
+    
+    .sr-section {
+        padding: 16px;
+    }
+    
+    .sr-section-title {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    .sr-form-row {
+        flex-wrap: wrap;
+    }
+
+    .sr-checkout-container {
+        padding: 16px;
+    }
+
+    .sr-checkout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-package-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-package {
+        flex-direction: row;
+        padding: 5px;
+        align-items: center;
+        min-height: 125px;
+    }
+
+    .sr-package-image {
+        width: 100px;
+        margin-right: 16px;
+    }
+
+    .sr-package-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .sr-package-info {
+        flex: 1;
+    }
+
+    .sr-package-name {
+        font-size: 16px;
+        margin-bottom: 2px;
+    }
+
+    .sr-package-units {
+        font-size: 14px;
+    }
+
+    .sr-package-price {
+        font-size: 20px;
+    }
+
+    .sr-package-original-price {
+        font-size: 12px;
+    }
+
+    .sr-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-payment-methods {
+        flex-direction: column;
+    }
+
+    .sr-order-summary {
+        position: static;
+        margin-top: 24px;
+    }
+
+    .sr-qr-modal-content {
+        padding: 24px 16px;
+        margin: 16px;
+        width: calc(100% - 32px);
+    }
+
+    .sr-qr-amount {
+        font-size: 20px;
+    }
+
+    .sr-qr-instructions p {
+        font-size: 13px;
+    }
+
+    .sr-qr-download {
+        width: 32px;
+        height: 32px;
+    }
+
+    .sr-qr-close {
+        right: 12px;
+        top: 12px;
+    }
 }
