@@ -47,16 +47,13 @@ $public_key = $opn_api->get_public_key();
                                     </div>
                                     <div class="sr-package-units"><b><?php echo $package['units']; ?></b> box</div>
                                 </div>
-
                                 <div class="sr-package-price-container">
-                                    <div class="sr-package-price-row">
-                                        <div class="sr-package-price">฿<?php echo number_format($package['price']); ?></div>
-                                        <?php if ($package['discount'] > 0): ?>
-                                            <div class="sr-package-original-price">
-                                                ฿<?php echo number_format($package['price'] / (1 - $package['discount'] / 100)); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
+                                    <div class="sr-package-price">฿<?php echo number_format($package['price']); ?></div>
+                                    <?php if ($package['discount'] > 0): ?>
+                                        <div class="sr-package-original-price">
+                                            ฿<?php echo number_format($package['price'] / (1 - $package['discount'] / 100)); ?>
+                                        </div>
+                                    <?php endif; ?>
                                     <?php if ($package['discount'] > 0): ?>
                                         <div class="sr-package-discount">Save <?php echo $package['discount']; ?>%</div>
                                         <div class="sr-package-delivery">Free delivery</div>
