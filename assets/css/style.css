@@ -60,6 +60,8 @@
     flex-direction: row;
     align-items: center;
     gap: 20px;
+    position: relative;
+    overflow: hidden;
 }
 
 .sr-package:hover {
@@ -161,9 +163,17 @@
 }
 
 .sr-package-delivery {
-    color: #C73126;
-    font-weight: 500;
-    font-size: 14px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+}
+
+.sr-package-delivery img {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 20px 0 0 0;
 }
 
 /* Form Fields */
@@ -291,7 +301,7 @@ textarea {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    margin-top: 24px;
+    margin-top: 12px;
 }
 
 
@@ -630,6 +640,98 @@ body.sr-modal-open {
 }
 
 
+/* Secured by Section */
+.sr-secured-by {
+    position: relative;
+    padding: 20px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 16px;
+}
+
+.sr-secured-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    left: 20px;
+    background: #fff;
+    padding: 0 12px;
+    top: -10px;
+}
+
+.sr-secured-text {
+    color: #008905;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.sr-opn-logo {
+    height: 20px;
+    width: auto;
+}
+
+.sr-secure-methods {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 26px;
+
+}
+
+.sr-secure-methods img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+}
+
+
+/* SSL Notice */
+.sr-ssl-notice {
+    margin-top: 15px;
+    padding: 10px 8px;
+    background: #F6FEF9;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+}
+
+.sr-ssl-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sr-ssl-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.sr-ssl-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sr-ssl-title {
+    font-weight: 600;
+    color: #1A1A1A;
+    font-size: 14px;
+    margin: 0;
+}
+
+.sr-ssl-desc {
+    color: #4D4D4D;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+
 /* Additional Mobile Optimizations */
 @media (max-width: 768px) {
     .sr-package-grid {
@@ -706,6 +808,11 @@ body.sr-modal-open {
         font-size: 14px;
     }
 
+    /* .sr-package-price-container {
+
+        align-self: flex-start;
+    } */
+
     .sr-package-price {
         font-size: 20px;
     }
@@ -749,5 +856,13 @@ body.sr-modal-open {
     .sr-qr-close {
         right: 12px;
         top: 12px;
+    }
+
+    .sr-secure-methods img {
+        height: 18px;
+    }
+
+    .sr-package-delivery img {
+        height: 25px;
     }
 }

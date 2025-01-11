@@ -45,7 +45,7 @@ $public_key = $opn_api->get_public_key();
                                     <div class="sr-package-name">
                                         <?php echo sprintf(__('%s', 'opn-to-crm'), $package['name']); ?>
                                     </div>
-                                    <div class="sr-package-units"><b><?php echo $package['units']; ?></b> box</div>
+                                    <div class="sr-package-units"><b><?php echo $package['units']; ?></b> box<?php echo $package['units'] > 1  ? 's' : ''?></div>
                                 </div>
                                 <div class="sr-package-price-container">
                                     <div class="sr-package-price">฿<?php echo number_format($package['price']); ?></div>
@@ -56,7 +56,9 @@ $public_key = $opn_api->get_public_key();
                                     <?php endif; ?>
                                     <?php if ($package['discount'] > 0): ?>
                                         <div class="sr-package-discount">Save <?php echo $package['discount']; ?>%</div>
-                                        <div class="sr-package-delivery">Free delivery</div>
+                                        <div class="sr-package-delivery">
+                                            <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/delivery.png" alt="Free delivery">
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -70,11 +72,11 @@ $public_key = $opn_api->get_public_key();
                 <h2 class="sr-section-title"><?php _e('Personal Information', 'opn-to-crm'); ?></h2>
                 <div class="sr-form-grid">
                     <div class="sr-form-field">
-                        <label for="first_name"><?php _e('First Name', 'opn-to-crm'); ?> *</label>
+                        <label for="first_name"><?php _e('First Name - ชื่อ', 'opn-to-crm'); ?> *</label>
                         <input type="text" id="first_name" name="first_name" required>
                     </div>
                     <div class="sr-form-field">
-                        <label for="last_name"><?php _e('Last Name', 'opn-to-crm'); ?> *</label>
+                        <label for="last_name"><?php _e('Last Name - นามสกุล', 'opn-to-crm'); ?> *</label>
                         <input type="text" id="last_name" name="last_name" required>
                     </div>
                     <div class="sr-form-field">
@@ -98,16 +100,16 @@ $public_key = $opn_api->get_public_key();
                 <div class="sr-form-stack">
                     <div class="sr-form-row">
                         <div class="sr-form-field">
-                            <label for="city"><?php _e('City', 'opn-to-crm'); ?> *</label>
+                            <label for="city"><?php _e('City - เมือง', 'opn-to-crm'); ?> *</label>
                             <input type="text" id="city" name="city" required>
                         </div>
                         <div class="sr-form-field">
-                            <label for="postal_code"><?php _e('Postal Code', 'opn-to-crm'); ?> *</label>
+                            <label for="postal_code"><?php _e('Postal Code - รหัสไปรษณีย์', 'opn-to-crm'); ?> *</label>
                             <input type="text" id="postal_code" name="postal_code" maxlength="5" required>
                         </div>
                     </div>
                     <div class="sr-form-field">
-                        <label for="address"><?php _e('Address', 'opn-to-crm'); ?> *</label>
+                        <label for="address"><?php _e('Address - ที่อยู่', 'opn-to-crm'); ?> *</label>
                         <textarea id="address" name="address" required></textarea>
                     </div>
                     <div class="sr-form-field" style="display: none;">
@@ -156,20 +158,33 @@ $public_key = $opn_api->get_public_key();
             <div class="sr-section sr-order-summary">
                 <h2 class="sr-section-title"><?php _e('Order Summary', 'opn-to-crm'); ?></h2>
                 <div class="sr-summary-line">
-                    <span><?php _e('Package', 'opn-to-crm'); ?></span>
+                    <span><?php _e('Package(พัสดุ)', 'opn-to-crm'); ?></span>
                     <span id="summary-package">-</span>
                 </div>
                 <div class="sr-summary-line">
-                    <span><?php _e('Units', 'opn-to-crm'); ?></span>
+                    <span><?php _e('Count(จำนวน)', 'opn-to-crm'); ?></span>
                     <span id="summary-units">-</span>
                 </div>
                 <div class="sr-summary-line">
-                    <span><?php _e('Discount', 'opn-to-crm'); ?></span>
+                    <span><?php _e('Discount(ส่วนลด)', 'opn-to-crm'); ?></span>
                     <span id="summary-discount">-</span>
                 </div>
                 <div class="sr-summary-line sr-total">
-                    <span><?php _e('Total', 'opn-to-crm'); ?></span>
+                    <span><?php _e('Total(ยอดรวม)', 'opn-to-crm'); ?></span>
                     <span id="summary-total">฿0</span>
+                </div>
+                <div class="sr-secured-by">
+                    <div class="sr-secured-head">
+                        <span class="sr-secured-text">Secured by</span>
+                        <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/opnp.png" alt="OPN Payments"
+                            class="sr-opn-logo">
+                    </div>
+                    <div class="sr-secure-methods">
+                        <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/visa-secure.png" alt="Visa">
+                        <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/upay.png" alt="UnionPay">
+                        <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/mastercard-check.png" alt="Mastercard">
+                        <img src="<?php echo OPN_TO_CRM_PLUGIN_URL; ?>assets/images/jcb-sec.png" alt="JCB">
+                    </div>
                 </div>
                 <button type="button" class="sr-submit-button" id="sr-submit">
                     <span class="sr-button-text"><?php _e('Complete Order', 'opn-to-crm'); ?></span>
@@ -179,6 +194,24 @@ $public_key = $opn_api->get_public_key();
                     </span>
                 </button>
                 <div id="payment-status" class="sr-payment-status" style="display: none;"></div>
+                <!-- SSL Notice -->
+                <!-- SSL Notice -->
+                <div class="sr-ssl-notice">
+                    <div class="sr-ssl-content">
+                        <svg class="sr-ssl-icon" width="28" height="38" viewBox="0 0 28 38"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#008905"
+                                d="M24.9 14.432v-5.21C24.9 4.136 20.87 0 15.917 0H11.98C7.026 0 2.996 4.137 2.996 9.221v5.23C1.296 14.763 0 16.233 0 17.986v16.417C0 36.38 1.65 38 3.668 38h20.664C26.35 38 28 36.381 28 34.403V17.986c0-1.789-1.35-3.283-3.1-3.554Zm-9.195 12.273v4.1c0 .669-.558 1.215-1.24 1.215h-.308c-.682 0-1.24-.547-1.24-1.216v-4.037c-1.39-.52-2.376-1.84-2.376-3.384 0-2.001 1.653-3.623 3.691-3.623 2.039 0 3.692 1.622 3.692 3.622.002 1.487-.912 2.765-2.22 3.323Zm6.193-12.316h-15.9V9.221c0-3.408 2.685-6.18 5.981-6.18h3.938c3.298 0 5.981 2.772 5.981 6.18v5.168Z">
+                            </path>
+                        </svg>
+                        <div class="sr-ssl-text">
+                            <p class="sr-ssl-title">SSL</p>
+                            <p class="sr-ssl-desc">
+                                <?php _e('การชำระเงินที่ปลอดภัยด้วยการเข้ารหัส SSL แบบ 256 บิต', 'opn-to-crm'); ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
